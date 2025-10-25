@@ -1,5 +1,7 @@
 # PodTrail
 
+<img width="592" height="595" alt="podtrail" src="https://github.com/user-attachments/assets/9ff08f4a-5a53-46cb-b205-8d31fdbee25e" />
+
 PodTrail is a minimal Android podcast tracker (Kotlin + Jetpack Compose + ExoPlayer) that:
 - Lets you add podcast RSS feed URLs
 - Parses feeds (including iTunes tags: episode number, duration)
