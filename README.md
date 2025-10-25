@@ -12,7 +12,7 @@ PodTrail is a minimal Android podcast tracker (Kotlin + Jetpack Compose + ExoPla
 Quickstart
 1. Create a new repository on GitHub named "podtrail" (or run the commands below).
 2. Clone the repo or create the Android Studio project locally.
-3. Add the source files under package `com.example.podtrack` (I previously prepared the full source; paste them into the project).
+3. Add the source files under package `com.example.podtrack`.
 4. Build & run on an emulator or device with network access.
 5. Add a feed URL (public RSS), open a podcast, tap an episode to play. Playback progress is saved; if you listen >= 90% the episode will be marked as listened.
 
@@ -22,4 +22,4 @@ Notes and next steps
 - Add sync across devices (server or cloud).
 - Add downloads & offline playback.
 
-License: MIT (add LICENSE file if you want)
+License: MIT 
