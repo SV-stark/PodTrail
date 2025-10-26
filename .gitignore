@@ -15,3 +15,6 @@ captures/
 # Others
 .DS_Store
 *.log
+
+# Ignore Gradle build output directory
+build
