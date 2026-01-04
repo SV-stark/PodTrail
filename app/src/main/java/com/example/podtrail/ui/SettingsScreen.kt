@@ -127,8 +127,7 @@ fun SettingsScreen(
                     }
                 }
             }
-                }
-            }
+
 
             HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
