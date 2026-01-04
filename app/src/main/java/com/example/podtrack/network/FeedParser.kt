@@ -139,7 +139,7 @@ class FeedParser {
         if (text == null) return null
         val trimmed = text.trim()
         // If it's just seconds:
-        if (trimmed.matches(Regex("^\d+$"))) {
+        if (trimmed.matches(Regex("^\\d+$"))) {
             return trimmed.toLong() * 1000L
         }
         // If it's HH:MM:SS or MM:SS

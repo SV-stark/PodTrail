@@ -81,6 +81,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
     val podcasts by vm.podcasts.collectAsState()
