@@ -41,7 +41,7 @@ Follow these steps to build and run the application locally.
 ### Prerequisites
 
 - **Android Studio** (Ladybug | 2024.2.1 or newer recommended)
-- **JDK 17** or higher (Required for Gradle 8.10+)
+- **JDK 21** (Required for Gradle 9.0+)
 
 ### Installation
 
