@@ -25,14 +25,14 @@
 - **Podcast Search**:  Search for podcasts directly using the **iTunes API**.
 - **RSS Feed Management**: Easily add podcast RSS URLs to subscribe.
 - **Smart Parsing**: Automatically parses feeds to extract metadata, including iTunes tags, episode numbers, and durations.
-- **Progress Tracking**: Remembers your playback position and automatically marks episodes as "listened" after 90% completion.
+- **Episode Tracking**: Manually mark episodes as "listened" to keep track of your history.
 
 ## 🛠️ Tech Stack
 
 - **Language**: [Kotlin](https://kotlinlang.org/)
 - **UI Framework**: [Jetpack Compose](https://developer.android.com/jetbrains/compose)
 - **Database**: [Room](https://developer.android.com/training/data-storage/room)
-- **Audio**: [ExoPlayer](https://developer.android.com/media/media3/exoplayer)
+- **Network**: [OkHttp](https://square.github.io/okhttp/) & [Gson](https://github.com/google/gson)
 
 ## 🚀 Getting Started
 
@@ -40,8 +40,8 @@ Follow these steps to build and run the application locally.
 
 ### Prerequisites
 
-- **Android Studio** (Hedgehog or newer recommended)
-- **JDK 17**
+- **Android Studio** (Ladybug | 2024.2.1 or newer recommended)
+- **JDK 17** or higher (Required for Gradle 8.10+)
 
 ### Installation
 
@@ -62,6 +62,7 @@ Follow these steps to build and run the application locally.
 ### Usage
 
 1.  **Add a Podcast**: Tap the "Add" button and enter a valid public RSS feed URL.
+2.  **Track Episodes**: Tap on an episode to view details and mark it as listened.
 
 ## 🗺️ Roadmap
 
