@@ -60,7 +60,17 @@ class SettingsRepository(private val context: Context) {
     suspend fun importDatabase(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
+                // 1. Close the database
+                PodcastDatabase.destroyInstance()
+                
+                // 2. Delete existing database files to prevent stale WAL/locking issues
+                context.deleteDatabase("podtrack.db")
+
+                // 3. Copy the new database
                 val dbFile = getDatabasePath()
+                // deleteDatabase should handle this, but ensure parent dir exists
+                dbFile.parentFile?.mkdirs()
+                
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     dbFile.outputStream().use { output ->
                         input.copyTo(output)
@@ -77,6 +87,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun exportDatabase(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
+                // 1. Checkpoint to flush WAL to main .db file
+                PodcastDatabase.getInstance(context).checkpoint()
+
                 val dbFile = getDatabasePath()
                 if (!dbFile.exists()) return@withContext false
                 

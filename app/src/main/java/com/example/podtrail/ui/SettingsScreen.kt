@@ -153,8 +153,11 @@ fun SettingsScreen(
                     scope.launch {
                         val success = repo.importDatabase(uri)
                         if (success) {
-                            // Restart app or reload data
-                            // handling simple reload by relying on flow updates or user restart
+                            // Restart the activity to reload the database connection
+                            val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                            intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            context.startActivity(intent)
+                            Runtime.getRuntime().exit(0) // Hard kill to ensure DB connection is reset
                         }
                     }
                 }

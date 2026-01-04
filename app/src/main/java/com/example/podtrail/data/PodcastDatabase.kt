@@ -21,5 +21,16 @@ abstract class PodcastDatabase : RoomDatabase() {
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
             }
+
+        fun destroyInstance() {
+            INSTANCE?.close()
+            INSTANCE = null
+        }
+    }
+
+    fun checkpoint() {
+        if (!isOpen) return
+        val db = openHelper.writableDatabase
+        db.query("PRAGMA wal_checkpoint(FULL)").close()
     }
 }
