@@ -3,6 +3,7 @@ package com.example.podtrail.data
 import com.example.podtrail.network.FeedParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 
 class PodcastRepository(private val dao: PodcastDao) {
     private val parser = FeedParser()
@@ -50,10 +51,10 @@ class PodcastRepository(private val dao: PodcastDao) {
     fun getHistory() = dao.getHistory()
     
     suspend fun getUpNext(): List<Episode> = withContext(Dispatchers.IO) {
-        val podcasts = dao.getAllPodcasts().kotlinx.coroutines.flow.first()
+        val podcasts = dao.getAllPodcasts().first()
         val upNextList = mutableListOf<Episode>()
         for (p in podcasts) {
-            val episodes = dao.getEpisodesForPodcastAsc(p.id).kotlinx.coroutines.flow.first()
+            val episodes = dao.getEpisodesForPodcastAsc(p.id).first()
             val next = episodes.firstOrNull { !it.listened }
             if (next != null) {
                 upNextList.add(next)
