@@ -27,6 +27,20 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _sortOrder = kotlinx.coroutines.flow.MutableStateFlow(false) // false = DESC, true = ASC
     val sortOrder = _sortOrder.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    
+    private val searcher = com.example.podtrail.network.ItunesPodcastSearcher()
+    private val _searchResults = kotlinx.coroutines.flow.MutableStateFlow<List<com.example.podtrail.network.SearchResult>>(emptyList())
+    val searchResults = _searchResults.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun search(query: String) {
+        viewModelScope.launch {
+            _searchResults.value = searcher.search(query)
+        }
+    }
+
+    fun clearSearch() {
+        _searchResults.value = emptyList()
+    }
 
     fun toggleSortOrder() {
         _sortOrder.value = !_sortOrder.value

@@ -55,20 +55,22 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
-    var showAdd by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var playingEpisode by remember { mutableStateOf<Episode?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("PodTrack") }, actions = {
-                IconButton(onClick = { showAdd = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
+                IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
             })
         }
     ) { padding ->
         Box(Modifier.padding(padding)) {
             if (playingEpisode != null) {
                 PlayerScreen(episode = playingEpisode!!, vm = vm, onClose = { playingEpisode = null })
+            } else if (showSearch) {
+                SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
             } else if (selectedPodcast == null) {
                 PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
             } else {
@@ -77,14 +79,84 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                     onPlay = { ep -> playingEpisode = ep }
                 )
             }
+        }
+    }
+}
 
-            if (showAdd) {
-                AddPodcastDialog(onAdd = { feedUrl ->
-                    vm.addPodcast(feedUrl) { res ->
-                        // TODO: show feedback
+@Composable
+fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val results by vm.searchResults.collectAsState()
+    var directUrl by remember { mutableStateOf("") }
+
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+            Text("Add Podcast", style = MaterialTheme.typography.titleLarge)
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // Search Bar
+        OutlinedTextField(
+            value = query,
+            onValueChange = { 
+                query = it
+                vm.search(it)
+            },
+            label = { Text("Search Podcasts") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // Direct URL Input (Fallback)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = directUrl,
+                onValueChange = { directUrl = it },
+                label = { Text("Or enter Feed URL directly") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = {
+                if (directUrl.isNotBlank()) {
+                    vm.addPodcast(directUrl) { }
+                    onPodcastAdded()
+                }
+            }) { Text("Add") }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Results List
+        LazyColumn {
+            items(results) { result ->
+                ListItem(
+                    headlineContent = { Text(result.collectionName ?: "Unknown Title") },
+                    supportingContent = { Text(result.artistName ?: "") },
+                    leadingContent = {
+                        AsyncImage(
+                            model = result.artworkUrl600 ?: result.artworkUrl100,
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                            contentScale = ContentScale.Crop,
+                            placeholder = rememberVectorPainter(Icons.Default.Podcasts),
+                            error = rememberVectorPainter(Icons.Default.Podcasts)
+                        )
+                    },
+                    trailingContent = {
+                        Button(onClick = {
+                            result.feedUrl?.let { url ->
+                                vm.addPodcast(url) { }
+                                onPodcastAdded()
+                            }
+                        }) { Text("Add") }
                     }
-                    showAdd = false
-                }, onDismiss = { showAdd = false })
+                )
+                HorizontalDivider()
             }
         }
     }
@@ -115,28 +187,6 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
             HorizontalDivider()
         }
     }
-}
-
-@Composable
-fun AddPodcastDialog(onAdd: (String) -> Unit, onDismiss: () -> Unit) {
-    var text by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add podcast feed") },
-        text = {
-            Column {
-                OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("Feed URL") })
-                Spacer(Modifier.height(4.dp))
-                Text("Example: https://feeds.simplecast.com/abcd", style = MaterialTheme.typography.bodySmall)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onAdd(text) }) { Text("Add") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
