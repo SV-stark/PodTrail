@@ -1,4 +1,4 @@
-package com.example.podtrack.data
+package com.example.podtrail.data
 
 import android.content.Context
 import androidx.room.Database

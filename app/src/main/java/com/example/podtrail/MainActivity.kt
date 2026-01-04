@@ -1,4 +1,4 @@
-package com.example.podtrack
+package com.example.podtrail
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,9 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.podtrack.data.Episode
-import com.example.podtrack.data.Podcast
-import com.example.podtrack.ui.PodcastViewModel
+import com.example.podtrail.data.Episode
+import com.example.podtrail.data.Podcast
+import com.example.podtrail.ui.PodcastViewModel
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add

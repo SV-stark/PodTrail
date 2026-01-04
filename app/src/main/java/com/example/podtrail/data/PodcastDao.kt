@@ -1,4 +1,4 @@
-package com.example.podtrack.data
+package com.example.podtrail.data
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow

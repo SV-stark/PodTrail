@@ -1,6 +1,6 @@
-package com.example.podtrack.data
+package com.example.podtrail.data
 
-import com.example.podtrack.network.FeedParser
+import com.example.podtrail.network.FeedParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

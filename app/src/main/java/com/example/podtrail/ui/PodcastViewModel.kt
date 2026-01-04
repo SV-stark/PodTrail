@@ -1,11 +1,11 @@
-package com.example.podtrack.ui
+package com.example.podtrail.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.podtrack.data.PodcastDatabase
-import com.example.podtrack.data.PodcastRepository
-import com.example.podtrack.data.Episode
+import com.example.podtrail.data.PodcastDatabase
+import com.example.podtrail.data.PodcastRepository
+import com.example.podtrail.data.Episode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch

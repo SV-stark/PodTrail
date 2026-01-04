@@ -1,4 +1,4 @@
-package com.example.podtrack.data
+package com.example.podtrail.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
