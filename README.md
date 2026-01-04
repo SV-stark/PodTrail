@@ -22,4 +22,4 @@ Notes and next steps
 - Add sync across devices (server or cloud).
 - Add downloads & offline playback.
 
-License: MIT 
+License: GPL v3 

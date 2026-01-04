@@ -38,14 +38,12 @@ android {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.21")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.11.0")
 
-    // Use single-string notation, avoiding deprecated multi-string notation
-    implementation("com.android.tools.lint:lint-gradle:31.13.0")
-    implementation("com.android.tools.build:aapt2:8.13.0-13719691:linux")
+
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.6")
