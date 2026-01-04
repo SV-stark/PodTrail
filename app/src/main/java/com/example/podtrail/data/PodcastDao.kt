@@ -28,4 +28,10 @@ interface PodcastDao {
 
     @Update
     suspend fun updateEpisode(episode: Episode)
+
+    @Query("DELETE FROM podcasts")
+    suspend fun deleteAllPodcasts()
+
+    @Query("DELETE FROM episodes")
+    suspend fun deleteAllEpisodes()
 }
