@@ -7,7 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.podtrail.data.Episode
 import com.example.podtrail.data.Podcast
 import com.example.podtrail.ui.PodcastViewModel
+import com.example.podtrail.ui.theme.PodTrailTheme
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -34,16 +35,20 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.material.icons.filled.Sort
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PodTrackApp()
+            PodTrailTheme {
+                PodTrackApp()
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     var showAdd by remember { mutableStateOf(false) }
@@ -81,7 +86,6 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
     val podcasts by vm.podcasts.collectAsState()
@@ -91,10 +95,10 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onOpen(p) },
-                text = { Text(p.title) },
-                secondaryText = { Text(p.feedUrl) }
+                headlineContent = { Text(p.title) },
+                supportingContent = { Text(p.feedUrl) }
             )
-            Divider()
+            HorizontalDivider()
         }
     }
 }
@@ -109,7 +113,7 @@ fun AddPodcastDialog(onAdd: (String) -> Unit, onDismiss: () -> Unit) {
             Column {
                 OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("Feed URL") })
                 Spacer(Modifier.height(4.dp))
-                Text("Example: https://feeds.simplecast.com/abcd", style = MaterialTheme.typography.caption)
+                Text("Example: https://feeds.simplecast.com/abcd", style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = {
@@ -121,17 +125,31 @@ fun AddPodcastDialog(onAdd: (String) -> Unit, onDismiss: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onPlay: (Episode) -> Unit) {
+    // Sorting state handled in next steps, keeping structure M3 ready
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
+    
+    // We need to fetch current sort order from VM later
+    val sortOrder by vm.sortOrder.collectAsState()
+
     Column {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
-        }
+        TopAppBar(
+            title = { Text("Episodes") },
+            navigationIcon = {
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+            },
+            actions = {
+                IconButton(onClick = { vm.toggleSortOrder() }) {
+                    Icon(Icons.Default.Sort, contentDescription = "Sort")
+                }
+            }
+        )
         LazyColumn {
             items(episodes) { ep ->
                 EpisodeRow(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onPlay = { onPlay(ep) })
-                Divider()
+                HorizontalDivider()
             }
         }
     }
@@ -143,10 +161,10 @@ fun EpisodeRow(ep: Episode, onToggle: () -> Unit, onPlay: () -> Unit) {
         .fillMaxWidth()
         .padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).clickable { onPlay() }) {
-            Text(ep.title)
-            if (ep.pubDate > 0) Text(java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.pubDate)), style = MaterialTheme.typography.caption)
-            if (ep.episodeNumber != null) Text("Episode ${ep.episodeNumber}", style = MaterialTheme.typography.caption)
-            if (ep.durationMillis != null) Text("Duration ${formatMillis(ep.durationMillis)}", style = MaterialTheme.typography.caption)
+            Text(ep.title, style = MaterialTheme.typography.bodyLarge)
+            if (ep.pubDate > 0) Text(java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.pubDate)), style = MaterialTheme.typography.bodySmall)
+            if (ep.episodeNumber != null) Text("Episode ${ep.episodeNumber}", style = MaterialTheme.typography.bodySmall)
+            if (ep.durationMillis != null) Text("Duration ${formatMillis(ep.durationMillis)}", style = MaterialTheme.typography.bodySmall)
         }
         Column(horizontalAlignment = Alignment.End) {
             Checkbox(checked = ep.listened, onCheckedChange = { onToggle() })
@@ -208,12 +226,12 @@ fun PlayerScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> Unit) {
                     player.playWhenReady = false
                     onClose()
                 }) { Icon(Icons.Default.ArrowBack, contentDescription = "Close") }
-                Text(episode.title, style = MaterialTheme.typography.h6)
+                Text(episode.title, style = MaterialTheme.typography.titleLarge)
             }
             Spacer(Modifier.height(8.dp))
-            Text(if (episode.episodeNumber != null) "Episode ${episode.episodeNumber}" else "", style = MaterialTheme.typography.body2)
+            Text(if (episode.episodeNumber != null) "Episode ${episode.episodeNumber}" else "", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(4.dp))
-            Text("Position: ${formatMillis(player.currentPosition)} / ${formatMillis(if (player.duration > 0) player.duration else (episode.durationMillis ?: 0L))}", style = MaterialTheme.typography.caption)
+            Text("Position: ${formatMillis(player.currentPosition)} / ${formatMillis(if (player.duration > 0) player.duration else (episode.durationMillis ?: 0L))}", style = MaterialTheme.typography.bodySmall)
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {

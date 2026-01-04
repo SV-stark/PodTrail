@@ -20,6 +20,9 @@ interface PodcastDao {
     @Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
     fun getEpisodesForPodcast(podcastId: Long): Flow<List<Episode>>
 
+    @Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    fun getEpisodesForPodcastAsc(podcastId: Long): Flow<List<Episode>>
+
     @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
     suspend fun getEpisodeById(episodeId: Long): Episode?
 

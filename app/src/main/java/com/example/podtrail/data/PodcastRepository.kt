@@ -41,7 +41,8 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
     }
 
-    fun episodesForPodcast(podcastId: Long) = dao.getEpisodesForPodcast(podcastId)
+    fun episodesForPodcast(podcastId: Long, isAsc: Boolean = false) = 
+        if (isAsc) dao.getEpisodesForPodcastAsc(podcastId) else dao.getEpisodesForPodcast(podcastId)
 
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
         dao.updateEpisode(episode.copy(listened = listened))

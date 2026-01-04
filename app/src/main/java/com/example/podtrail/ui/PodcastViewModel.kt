@@ -7,6 +7,7 @@ import com.example.podtrail.data.PodcastDatabase
 import com.example.podtrail.data.PodcastRepository
 import com.example.podtrail.data.Episode
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -24,7 +25,16 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun episodesFor(podcastId: Long) = repo.episodesForPodcast(podcastId)
+    private val _sortOrder = kotlinx.coroutines.flow.MutableStateFlow(false) // false = DESC, true = ASC
+    val sortOrder = _sortOrder.stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+    fun toggleSortOrder() {
+        _sortOrder.value = !_sortOrder.value
+    }
+
+    fun episodesFor(podcastId: Long) = _sortOrder.flatMapLatest { isAsc ->
+        repo.episodesForPodcast(podcastId, isAsc)
+    }
 
     fun setListened(e: Episode, listened: Boolean) {
         viewModelScope.launch {
