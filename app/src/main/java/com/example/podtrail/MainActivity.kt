@@ -206,7 +206,16 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
                 headlineContent = { Text(p.title) },
                 supportingContent = { 
                     Column {
-                        Text("${pStats.listenedEpisodes} / ${pStats.totalEpisodes} episodes")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("${pStats.listenedEpisodes} / ${pStats.totalEpisodes} episodes")
+                            if (pStats.totalEpisodes > 0) {
+                                val percentage = (pStats.listenedEpisodes.toFloat() / pStats.totalEpisodes.toFloat() * 100).toInt()
+                                Text("$percentage% completed")
+                            }
+                        }
                         if (pStats.totalEpisodes > 0) {
                             LinearProgressIndicator(
                                 progress = { pStats.listenedEpisodes.toFloat() / pStats.totalEpisodes.toFloat() },
