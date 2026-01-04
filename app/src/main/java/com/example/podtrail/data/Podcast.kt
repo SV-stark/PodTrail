@@ -10,3 +10,9 @@ data class Podcast(
     val feedUrl: String,
     val imageUrl: String? = null
 )
+
+data class PodcastWithStats(
+    @androidx.room.Embedded val podcast: Podcast,
+    val totalEpisodes: Int,
+    val listenedEpisodes: Int
+)

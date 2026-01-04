@@ -194,16 +194,28 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
 }
 
 @Composable
+@Composable
 fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
     val podcasts by vm.podcasts.collectAsState()
     LazyColumn {
-        items(podcasts) { p ->
+        items(podcasts) { pStats ->
+            val p = pStats.podcast
             ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onOpen(p) },
                 headlineContent = { Text(p.title) },
-                supportingContent = { Text(p.feedUrl) },
+                supportingContent = { 
+                    Column {
+                        Text("${pStats.listenedEpisodes} / ${pStats.totalEpisodes} episodes")
+                        if (pStats.totalEpisodes > 0) {
+                            LinearProgressIndicator(
+                                progress = { pStats.listenedEpisodes.toFloat() / pStats.totalEpisodes.toFloat() },
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            )
+                        }
+                    }
+                },
                 leadingContent = {
                     AsyncImage(
                         model = p.imageUrl,

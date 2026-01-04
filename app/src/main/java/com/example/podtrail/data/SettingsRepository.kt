@@ -52,4 +52,44 @@ class SettingsRepository(private val context: Context) {
     suspend fun setCustomColor(color: Int) {
         dataStore.edit { it[Keys.CUSTOM_COLOR] = color }
     }
+
+    fun getDatabasePath(): java.io.File {
+        return context.getDatabasePath("podtrack.db")
+    }
+
+    suspend fun importDatabase(uri: android.net.Uri): Boolean {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val dbFile = getDatabasePath()
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    dbFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
+
+    suspend fun exportDatabase(uri: android.net.Uri): Boolean {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val dbFile = getDatabasePath()
+                if (!dbFile.exists()) return@withContext false
+                
+                context.contentResolver.openOutputStream(uri)?.use { output ->
+                    dbFile.inputStream().use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
 }

@@ -127,6 +127,60 @@ fun SettingsScreen(
                     }
                 }
             }
+                }
+            }
+
+            HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+            // Backup & Restore
+            Text("Backup & Restore", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(16.dp))
+            
+            val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/x-sqlite3")
+            ) { uri ->
+                if (uri != null) {
+                    scope.launch {
+                        val success = repo.exportDatabase(uri)
+                        // toast or snackbar logic could go here
+                    }
+                }
+            }
+
+            val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                androidx.activity.result.contract.ActivityResultContracts.GetContent()
+            ) { uri ->
+                if (uri != null) {
+                    scope.launch {
+                        val success = repo.importDatabase(uri)
+                        if (success) {
+                            // Restart app or reload data
+                            // handling simple reload by relying on flow updates or user restart
+                        }
+                    }
+                }
+            }
+
+            Button(
+                onClick = { exportLauncher.launch("backup.db") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Export Database")
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { importLauncher.launch("*/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Import Database")
+            }
+            Text(
+                "Warning: Import will overwrite existing data. App restart may be required.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
         }
     }
 }

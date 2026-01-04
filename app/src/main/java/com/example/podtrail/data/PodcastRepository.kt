@@ -54,7 +54,7 @@ class PodcastRepository(private val dao: PodcastDao) {
         val podcasts = dao.getAllPodcasts().first()
         val upNextList = mutableListOf<Episode>()
         for (p in podcasts) {
-            val episodes = dao.getEpisodesForPodcastAsc(p.id).first()
+            val episodes = dao.getEpisodesForPodcastAsc(p.podcast.id).first()
             val next = episodes.firstOrNull { !it.listened }
             if (next != null) {
                 upNextList.add(next)

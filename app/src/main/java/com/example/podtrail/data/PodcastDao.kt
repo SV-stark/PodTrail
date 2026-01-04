@@ -5,8 +5,18 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PodcastDao {
-    @Query("SELECT * FROM podcasts ORDER BY title")
-    fun getAllPodcasts(): Flow<List<Podcast>>
+    @Transaction
+    @Query("""
+        SELECT 
+            p.*, 
+            COUNT(e.id) as totalEpisodes,
+            SUM(CASE WHEN e.listened = 1 THEN 1 ELSE 0 END) as listenedEpisodes
+        FROM podcasts p
+        LEFT JOIN episodes e ON p.id = e.podcastId
+        GROUP BY p.id
+        ORDER BY p.title
+    """)
+    fun getAllPodcasts(): Flow<List<PodcastWithStats>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPodcast(podcast: Podcast): Long
