@@ -22,10 +22,9 @@
 
 ## ✨ Features
 
+- **Podcast Search**:  Search for podcasts directly using the **iTunes API**.
 - **RSS Feed Management**: Easily add podcast RSS URLs to subscribe.
 - **Smart Parsing**: Automatically parses feeds to extract metadata, including iTunes tags, episode numbers, and durations.
-- **Local Storage**: Persists podcasts and episode data locally using **Room** database.
-- **Robust Playback**: High-quality audio playback powered by **ExoPlayer**.
 - **Progress Tracking**: Remembers your playback position and automatically marks episodes as "listened" after 90% completion.
 
 ## 🛠️ Tech Stack
@@ -63,15 +62,12 @@ Follow these steps to build and run the application locally.
 ### Usage
 
 1.  **Add a Podcast**: Tap the "Add" button and enter a valid public RSS feed URL.
-2.  **Play an Episode**: Select a podcast, browse episodes, and tap to play.
-3.  **Track Progress**: Playback progress is saved automatically.
 
 ## 🗺️ Roadmap
 
 - [ ] **Enhanced Parsing**: Support for more iTunes tags and high-resolution artwork.
-- [ ] **Background Playback**: Media notification controls and background service.
 - [ ] **Cloud Sync**: Sync subscriptions and progress across devices.
-- [ ] **Offline Mode**: Download episodes for offline listening.
+
 
 ## 📄 License
 
