@@ -43,6 +43,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Info
+
 
 
 class MainActivity : ComponentActivity() {
@@ -65,9 +71,11 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
 
     var showSearch by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
-    var showStats by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
+    
+    // 0 = Home, 1 = Discover, 2 = Profile
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     com.example.podtrail.ui.theme.PodTrailTheme(
         darkTheme = when(appSettings.themeMode) {
@@ -75,38 +83,79 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             com.example.podtrail.data.ThemeMode.DARK -> true
             else -> isSystemInDarkTheme()
         },
-        dynamicColor = appSettings.useDynamicColor,
+        dynamicColor = false, // Enforce our custom theme for the request
         amoled = appSettings.useAmoled,
         customColor = appSettings.customColor
     ) {
+        val topAppBarColors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("PodTrack") }, actions = {
-                    IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
-                    IconButton(onClick = { showStats = true }) { Icon(Icons.Default.List, contentDescription = "Stats") }
-                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
-                })
+                if (selectedPodcast == null && selectedEpisode == null && !showSearch && !showSettings) {
+                    TopAppBar(
+                        title = { Text("PodTrack", style = MaterialTheme.typography.headlineMedium) },
+                        actions = {
+                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
+                             // Stats hidden for now as per mockup, or moved to profile?
+                            IconButton(onClick = { }) { Icon(Icons.Default.Menu, contentDescription = "Menu") } // Hamburger placeholder
+                            IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
+                        },
+                        colors = topAppBarColors
+                    )
+                }
+            },
+            bottomBar = {
+                if (selectedPodcast == null && selectedEpisode == null && !showSearch && !showSettings) {
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp
+                    ) {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                            label = { Text("HOME") },
+                            selected = selectedTab == 0,
+                            onClick = { selectedTab = 0 }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Explore, contentDescription = "Discover") },
+                            label = { Text("DISCOVER") },
+                            selected = selectedTab == 1,
+                            onClick = { selectedTab = 1 }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                            label = { Text("PROFILE") },
+                            selected = selectedTab == 2,
+                            onClick = { selectedTab = 2 } // Profile placeholder
+                        )
+                    }
+                }
             }
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 if (showSettings) {
                     com.example.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
-                } else if (showStats) {
-                    com.example.podtrail.ui.StatsScreen(vm, onBack = { showStats = false }, onEpisodeClick = { ep -> 
-                        selectedEpisode = ep 
-                        showStats = false
-                    })
                 } else if (selectedEpisode != null) {
                     EpisodeDetailScreen(episode = selectedEpisode!!, vm = vm, onClose = { selectedEpisode = null })
                 } else if (showSearch) {
                     SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
-                } else if (selectedPodcast == null) {
-                    PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
-                } else {
+                } else if (selectedPodcast != null) {
                     EpisodeListScreen(vm, selectedPodcast!!.id,
                         onBack = { selectedPodcast = null },
                         onDetails = { ep -> selectedEpisode = ep }
                     )
+                } else {
+                    // Main Tabs
+                    when (selectedTab) {
+                        0 -> PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
+                        1 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Discover Coming Soon") }
+                        2 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Profile Coming Soon") }
+                    }
                 }
             }
         }
@@ -196,46 +245,98 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
 @Composable
 fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
     val podcasts by vm.podcasts.collectAsState()
-    LazyColumn {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         items(podcasts) { pStats ->
             val p = pStats.podcast
-            ListItem(
+            PodcastCard(p, pStats, onClick = { onOpen(p) })
+        }
+    }
+}
+
+@Composable
+fun PodcastCard(
+    podcast: Podcast, 
+    stats: com.example.podtrail.data.PodcastWithStats, 
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = podcast.imageUrl,
+                contentDescription = null,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onOpen(p) },
-                headlineContent = { Text(p.title) },
-                supportingContent = { 
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("${pStats.listenedEpisodes} / ${pStats.totalEpisodes} episodes")
-                            if (pStats.totalEpisodes > 0) {
-                                val percentage = (pStats.listenedEpisodes.toFloat() / pStats.totalEpisodes.toFloat() * 100).toInt()
-                                Text("$percentage% completed")
-                            }
-                        }
-                        if (pStats.totalEpisodes > 0) {
-                            LinearProgressIndicator(
-                                progress = { pStats.listenedEpisodes.toFloat() / pStats.totalEpisodes.toFloat() },
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                            )
-                        }
-                    }
-                },
-                leadingContent = {
-                    AsyncImage(
-                        model = p.imageUrl,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        contentScale = ContentScale.Crop,
-                        error = rememberVectorPainter(Icons.Default.Podcasts),
-                        placeholder = rememberVectorPainter(Icons.Default.Podcasts)
-                    )
-                }
+                    .size(64.dp)
+                    .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop,
+                error = rememberVectorPainter(Icons.Default.Podcasts),
+                placeholder = rememberVectorPainter(Icons.Default.Podcasts)
             )
-            HorizontalDivider()
+            
+            Spacer(Modifier.width(16.dp))
+            
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = podcast.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                
+                Spacer(Modifier.height(8.dp))
+                
+                if (stats.totalEpisodes > 0) {
+                    LinearProgressIndicator(
+                        progress = { stats.listenedEpisodes.toFloat() / stats.totalEpisodes.toFloat() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.CircleShape),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
+                    
+                    Spacer(Modifier.height(4.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "${stats.listenedEpisodes}/${stats.totalEpisodes}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        val percentage = (stats.listenedEpisodes.toFloat() / stats.totalEpisodes.toFloat() * 100).toInt()
+                        Text(
+                            "$percentage% completed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            Spacer(Modifier.width(12.dp))
+            
+            Icon(
+                Icons.Default.Info, 
+                contentDescription = "Info",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

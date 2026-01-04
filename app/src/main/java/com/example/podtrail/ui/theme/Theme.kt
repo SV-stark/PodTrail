@@ -15,8 +15,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme()
-private val LightColorScheme = lightColorScheme()
+import androidx.compose.ui.graphics.Color
+
+val TealPrimary = Color(0xFF0F5A56) // Deep Teal
+val CreamBackground = Color(0xFFF7F4EB) // Cream/Off-white
+val SurfaceCream = Color(0xFFFFFDF5) // Lighter Cream for cards
+val DarkText = Color(0xFF1A1C19)
+
+private val LightColorScheme = lightColorScheme(
+    primary = TealPrimary,
+    onPrimary = Color.White,
+    secondary = TealPrimary,
+    onSecondary = Color.White,
+    tertiary = Color(0xFFD0BCFF),
+    background = CreamBackground,
+    onBackground = DarkText,
+    surface = SurfaceCream,
+    onSurface = DarkText,
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = TealPrimary,
+    onPrimary = Color.White,
+    secondary = TealPrimary,
+    onSecondary = Color.White,
+    background = Color(0xFF101412), // Darker fallback for pure dark mode
+    surface = Color(0xFF1E2321)
+)
 
 @Composable
 fun PodTrailTheme(
