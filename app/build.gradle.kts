@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-    val roomVersion = "2.6.1"
+    val roomVersion = "2.8.4"
     val composeVersion = "1.6.0"
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
