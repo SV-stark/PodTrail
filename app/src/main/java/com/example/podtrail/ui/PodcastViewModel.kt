@@ -56,9 +56,5 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun reportPlaybackProgress(episodeId: Long, positionMillis: Long, durationMillis: Long?) {
-        viewModelScope.launch {
-            repo.reportPlaybackProgress(episodeId, positionMillis, durationMillis)
-        }
-    }
+
 }

@@ -22,6 +22,5 @@ data class Episode(
     val durationMillis: Long? = null,
 
     // playback tracking:
-    val playbackPositionMillis: Long = 0,
     val listened: Boolean = false
 )

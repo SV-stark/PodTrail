@@ -72,8 +72,6 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
-    // ExoPlayer (Legacy 2.x as per code)
-    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
 
     // Network
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

@@ -6,7 +6,7 @@ import kotlinx.coroutines.withContext
 
 class PodcastRepository(private val dao: PodcastDao) {
     private val parser = FeedParser()
-    private val MARK_LISTENED_THRESHOLD = 0.90 // 90%
+
 
     fun allPodcasts() = dao.getAllPodcasts()
 
@@ -49,15 +49,3 @@ class PodcastRepository(private val dao: PodcastDao) {
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
         dao.updateEpisode(episode.copy(listened = listened))
     }
-
-    suspend fun reportPlaybackProgress(episodeId: Long, positionMillis: Long, durationMillis: Long?) {
-        withContext(Dispatchers.IO) {
-            val ep = dao.getEpisodeById(episodeId) ?: return@withContext
-            val dur = durationMillis ?: ep.durationMillis
-            val listened = if (dur != null && dur > 0) {
-                positionMillis.toDouble() / dur.toDouble() >= MARK_LISTENED_THRESHOLD
-            } else ep.listened
-            dao.updateEpisode(ep.copy(playbackPositionMillis = positionMillis, durationMillis = dur, listened = listened))
-        }
-    }
-}
