@@ -72,5 +72,11 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun deletePodcast(podcastId: Long) {
+        viewModelScope.launch {
+            repo.deletePodcast(podcastId)
+        }
+    }
+
 
 }

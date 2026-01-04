@@ -47,4 +47,16 @@ interface PodcastDao {
 
     @Query("DELETE FROM episodes")
     suspend fun deleteAllEpisodes()
+
+    @Query("DELETE FROM podcasts WHERE id = :podcastId")
+    suspend fun deletePodcastById(podcastId: Long)
+
+    @Query("DELETE FROM episodes WHERE podcastId = :podcastId")
+    suspend fun deleteEpisodesByPodcastId(podcastId: Long)
+
+    @Transaction
+    suspend fun deletePodcast(podcastId: Long) {
+        deleteEpisodesByPodcastId(podcastId)
+        deletePodcastById(podcastId)
+    }
 }

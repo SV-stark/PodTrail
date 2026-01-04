@@ -64,7 +64,9 @@ class SettingsRepository(private val context: Context) {
                 PodcastDatabase.destroyInstance()
                 
                 // 2. Delete existing database files to prevent stale WAL/locking issues
-                context.deleteDatabase("podtrack.db")
+            getDatabasePath().delete()
+            java.io.File(getDatabasePath().path + "-wal").delete()
+            java.io.File(getDatabasePath().path + "-shm").delete()
 
                 // 3. Copy the new database
                 val dbFile = getDatabasePath()
@@ -88,7 +90,12 @@ class SettingsRepository(private val context: Context) {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 // 1. Checkpoint to flush WAL to main .db file
-                PodcastDatabase.getInstance(context).checkpoint()
+                val dbInstance = PodcastDatabase.getInstance(context)
+                if (dbInstance.isOpen) {
+                    val db = dbInstance.openHelper.writableDatabase
+                    db.query("PRAGMA wal_checkpoint(FULL)").close()
+                    db.execSQL("VACUUM") // Ensure everything is compacted into the main file
+                }
 
                 val dbFile = getDatabasePath()
                 if (!dbFile.exists()) return@withContext false

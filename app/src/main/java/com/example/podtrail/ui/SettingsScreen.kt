@@ -103,29 +103,36 @@ fun SettingsScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     val colors = listOf(
                         0xFF6200EE.toInt(), // Purple
+                        0xFF3700B3.toInt(), // Dark Purple
+                        0xFFBB86FC.toInt(), // Light Purple
                         0xFFB71C1C.toInt(), // Red
-                        0xFF1B5E20.toInt(), // Green
-                        0xFF0D47A1.toInt(), // Blue
-                        0xFFE65100.toInt()  // Orange
+                        0xFFD32F2F.toInt(), // Light Red
+                        0xFF1B5E20.toInt(), // Dark Green
+                        0xFF4CAF50.toInt(), // Green
+                        0xFF0D47A1.toInt(), // Dark Blue
+                        0xFF2196F3.toInt(), // Blue
+                        0xFF006064.toInt(), // Dark Cyan
+                        0xFF00BCD4.toInt(), // Cyan
+                        0xFFE65100.toInt(), // Dark Orange
+                        0xFFFF9800.toInt(), // Orange
+                        0xFF3E2723.toInt(), // Dark Brown
+                        0xFF795548.toInt(), // Brown
+                        0xFF212121.toInt()  // Black/Dark Grey
                     )
                     
-                    colors.forEach { color ->
-                        Box(
-                            Modifier
-                                .size(40.dp)
-                                .background(Color(color), androidx.compose.foundation.shape.CircleShape)
-                                .clickable { scope.launch { repo.setCustomColor(color) } }
-                        ) {
-                            if (currentSettings.customColor == color) {
-                                Icon(
-                                    Icons.Default.Check, 
-                                    contentDescription = null, 
-                                    tint = Color.White,
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
-                            }
+                Column {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        colors.take(8).forEach { color ->
+                            ColorItem(color, currentSettings.customColor, scope, repo)
                         }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        colors.drop(8).take(8).forEach { color ->
+                            ColorItem(color, currentSettings.customColor, scope, repo)
+                        }
+                    }
+                }
                 }
             }
 

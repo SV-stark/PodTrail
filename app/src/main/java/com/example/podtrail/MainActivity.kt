@@ -86,7 +86,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             com.example.podtrail.data.ThemeMode.DARK -> true
             else -> isSystemInDarkTheme()
         },
-        dynamicColor = false, // Enforce our custom theme for the request
+        dynamicColor = appSettings.useDynamicColor,
         amoled = appSettings.useAmoled,
         customColor = appSettings.customColor
     ) {
@@ -248,13 +248,48 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
 @Composable
 fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
     val podcasts by vm.podcasts.collectAsState()
+    var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) }
+
+    if (showInfoPodcast != null) {
+        val p = showInfoPodcast!!
+        AlertDialog(
+            onDismissRequest = { showInfoPodcast = null },
+            title = { Text(p.title) },
+            text = {
+                Column {
+                    if (!p.description.isNullOrBlank()) {
+                         // Simple HTML decoding
+                        val decoded = try {
+                            android.text.Html.fromHtml(p.description, android.text.Html.FROM_HTML_MODE_COMPACT).toString()
+                        } catch (e: Exception) { p.description }
+                        Text(decoded, modifier = Modifier.verticalScroll(rememberScrollState()).heightIn(max = 200.dp))
+                    } else {
+                        Text("No description available.")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showInfoPodcast = null }) { Text("Close") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        vm.deletePodcast(p.id)
+                        showInfoPodcast = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Remove Podcast") }
+            }
+        )
+    }
+
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(podcasts) { pStats ->
             val p = pStats.podcast
-            PodcastCard(p, pStats, onClick = { onOpen(p) })
+            PodcastCard(p, pStats, onClick = { onOpen(p) }, onInfoClick = { showInfoPodcast = p })
         }
     }
 }
@@ -263,7 +298,8 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
 fun PodcastCard(
     podcast: Podcast, 
     stats: com.example.podtrail.data.PodcastWithStats, 
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onInfoClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
@@ -338,7 +374,9 @@ fun PodcastCard(
                 Icons.Default.Info, 
                 contentDescription = "Info",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { onInfoClick() }
             )
         }
     }

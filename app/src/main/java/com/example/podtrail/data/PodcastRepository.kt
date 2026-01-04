@@ -69,4 +69,8 @@ class PodcastRepository(private val dao: PodcastDao) {
             listenedAt = if (listened) System.currentTimeMillis() else null
         ))
     }
+
+    suspend fun deletePodcast(podcastId: Long) {
+        dao.deletePodcast(podcastId)
+    }
 }
