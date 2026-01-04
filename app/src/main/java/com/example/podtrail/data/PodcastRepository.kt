@@ -16,10 +16,16 @@ class PodcastRepository(private val dao: PodcastDao) {
             val (mappedPodcast, episodes) = parser.fetchFeed(feedUrl)
             val podcastTitle = mappedPodcast?.title ?: feedUrl
             val podcastImage = mappedPodcast?.imageUrl
+            val podcastDesc = mappedPodcast?.description
             
             // If podcast exists, reuse id; otherwise insert
             val existing = dao.getPodcastByFeedUrl(feedUrl)
-            val podcastId = existing?.id ?: dao.insertPodcast(Podcast(title = podcastTitle, feedUrl = feedUrl, imageUrl = podcastImage)).let { id ->
+            val podcastId = existing?.id ?: dao.insertPodcast(Podcast(
+                title = podcastTitle, 
+                feedUrl = feedUrl, 
+                imageUrl = podcastImage,
+                description = podcastDesc
+            )).let { id ->
                 if (id <= 0 && existing != null) existing.id else id
             }
 

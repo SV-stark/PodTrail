@@ -8,7 +8,8 @@ data class Podcast(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
     val feedUrl: String,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val description: String? = null
 )
 
 data class PodcastWithStats(

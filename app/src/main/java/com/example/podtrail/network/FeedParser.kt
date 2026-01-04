@@ -21,7 +21,8 @@ data class ParsedEpisode(
 
 data class ParsedPodcast(
     val title: String?,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val description: String?
 )
 
 class FeedParser {
@@ -44,6 +45,7 @@ class FeedParser {
             var event = parser.eventType
             var title: String? = null
             var imageUrl: String? = null
+            var description: String? = null
 
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
@@ -56,6 +58,9 @@ class FeedParser {
                         imageUrl = parseImageTag(parser) ?: imageUrl
                     } else if (name.equals("itunes:image", ignoreCase = true) && imageUrl == null) {
                          imageUrl = parser.getAttributeValue(null, "href")
+                    } else if (name.equals("description", ignoreCase = true) && description == null) {
+                        parser.next()
+                        description = parser.text
                     }
                 }
                  // naive stop if we have both, or break after first item... 
@@ -66,7 +71,7 @@ class FeedParser {
                 }
                 event = parser.next()
             }
-            return ParsedPodcast(title, imageUrl)
+            return ParsedPodcast(title, imageUrl, description)
         } catch (e: Exception) { }
         return null
     }

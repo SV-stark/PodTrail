@@ -1,18 +1,36 @@
+package com.example.podtrail.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.example.podtrail.data.SettingsRepository
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
-fun ColorItem(color: Int, selectedColor: Int, scope: kotlinx.coroutines.CoroutineScope, repo: SettingsRepository) {
-    androidx.compose.foundation.layout.Box(
-        androidx.compose.ui.Modifier
-            .androidx.compose.foundation.layout.size(36.dp)
-            .androidx.compose.foundation.background(androidx.compose.ui.graphics.Color(color), androidx.compose.foundation.shape.CircleShape)
-            .androidx.compose.foundation.clickable { scope.launch { repo.setCustomColor(color) } }
+fun ColorItem(color: Int, selectedColor: Int, scope: CoroutineScope, repo: SettingsRepository) {
+    Box(
+        Modifier
+            .size(36.dp)
+            .background(Color(color), CircleShape)
+            .clickable { scope.launch { repo.setCustomColor(color) } }
     ) {
         if (selectedColor == color) {
-            androidx.compose.material3.Icon(
-                androidx.compose.material.icons.Icons.Default.Check, 
+            Icon(
+                Icons.Default.Check, 
                 contentDescription = null, 
-                tint = androidx.compose.ui.graphics.Color.White,
-                modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.Center)
+                tint = Color.White,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
