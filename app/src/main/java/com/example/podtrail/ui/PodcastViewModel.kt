@@ -53,6 +53,22 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     fun setListened(e: Episode, listened: Boolean) {
         viewModelScope.launch {
             repo.markEpisodeListened(e, listened)
+            refreshUpNext()
+        }
+    }
+
+    val history = repo.getHistory().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    private val _upNext = kotlinx.coroutines.flow.MutableStateFlow<List<Episode>>(emptyList())
+    val upNext = _upNext.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    init {
+        refreshUpNext()
+    }
+
+    private fun refreshUpNext() {
+        viewModelScope.launch {
+            _upNext.value = repo.getUpNext()
         }
     }
 

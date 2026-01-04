@@ -47,7 +47,25 @@ class PodcastRepository(private val dao: PodcastDao) {
     fun episodesForPodcast(podcastId: Long, isAsc: Boolean = false) = 
         if (isAsc) dao.getEpisodesForPodcastAsc(podcastId) else dao.getEpisodesForPodcast(podcastId)
 
+    fun getHistory() = dao.getHistory()
+    
+    suspend fun getUpNext(): List<Episode> = withContext(Dispatchers.IO) {
+        val podcasts = dao.getAllPodcasts().kotlinx.coroutines.flow.first()
+        val upNextList = mutableListOf<Episode>()
+        for (p in podcasts) {
+            val episodes = dao.getEpisodesForPodcastAsc(p.id).kotlinx.coroutines.flow.first()
+            val next = episodes.firstOrNull { !it.listened }
+            if (next != null) {
+                upNextList.add(next)
+            }
+        }
+        upNextList
+    }
+
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
-        dao.updateEpisode(episode.copy(listened = listened))
+        dao.updateEpisode(episode.copy(
+            listened = listened,
+            listenedAt = if (listened) System.currentTimeMillis() else null
+        ))
     }
 }

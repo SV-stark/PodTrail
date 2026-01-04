@@ -23,5 +23,6 @@ data class Episode(
     val description: String? = null,
 
     // playback tracking:
-    val listened: Boolean = false
+    val listened: Boolean = false,
+    val listenedAt: Long? = null
 )

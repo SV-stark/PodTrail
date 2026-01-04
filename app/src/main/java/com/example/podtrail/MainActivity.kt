@@ -41,7 +41,9 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +65,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
 
     var showSearch by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showStats by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
 
@@ -80,6 +83,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             topBar = {
                 TopAppBar(title = { Text("PodTrack") }, actions = {
                     IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
+                    IconButton(onClick = { showStats = true }) { Icon(Icons.Default.List, contentDescription = "Stats") }
                     IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
                 })
             }
@@ -87,6 +91,11 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             Box(Modifier.padding(padding)) {
                 if (showSettings) {
                     com.example.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
+                } else if (showStats) {
+                    com.example.podtrail.ui.StatsScreen(vm, onBack = { showStats = false }, onEpisodeClick = { ep -> 
+                        selectedEpisode = ep 
+                        showStats = false
+                    })
                 } else if (selectedEpisode != null) {
                     EpisodeDetailScreen(episode = selectedEpisode!!, vm = vm, onClose = { selectedEpisode = null })
                 } else if (showSearch) {

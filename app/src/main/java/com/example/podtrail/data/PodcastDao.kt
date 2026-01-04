@@ -20,8 +20,11 @@ interface PodcastDao {
     @Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
     fun getEpisodesForPodcast(podcastId: Long): Flow<List<Episode>>
 
-    @Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
-    fun getEpisodesForPodcastAsc(podcastId: Long): Flow<List<Episode>>
+    @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    fun getEpisodesForPodcastAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
+
+    @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
+    fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>
 
     @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
     suspend fun getEpisodeById(episodeId: Long): Episode?
