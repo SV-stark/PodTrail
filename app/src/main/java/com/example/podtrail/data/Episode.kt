@@ -15,6 +15,7 @@ data class Episode(
     val guid: String,
     val pubDate: Long = 0,
     val audioUrl: String? = null,
+    val imageUrl: String? = null,
 
     // iTunes / enhanced fields:
     val episodeNumber: Int? = null,

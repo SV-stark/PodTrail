@@ -60,6 +60,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     implementation("androidx.compose.material3:material3:1.2.0") // M3
     implementation("androidx.compose.material:material-icons-extended:$composeVersion")
+    implementation("io.coil-kt:coil-compose:2.5.0")
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
 
     // Lifecycle

@@ -36,6 +36,10 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.material.icons.filled.Sort
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.filled.Podcasts
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,7 +100,17 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
                     .fillMaxWidth()
                     .clickable { onOpen(p) },
                 headlineContent = { Text(p.title) },
-                supportingContent = { Text(p.feedUrl) }
+                supportingContent = { Text(p.feedUrl) },
+                leadingContent = {
+                    AsyncImage(
+                        model = p.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        contentScale = ContentScale.Crop,
+                        error = rememberVectorPainter(Icons.Default.Podcasts),
+                        placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+                    )
+                }
             )
             HorizontalDivider()
         }
@@ -128,10 +142,7 @@ fun AddPodcastDialog(onAdd: (String) -> Unit, onDismiss: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onPlay: (Episode) -> Unit) {
-    // Sorting state handled in next steps, keeping structure M3 ready
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
-    
-    // We need to fetch current sort order from VM later
     val sortOrder by vm.sortOrder.collectAsState()
 
     Column {
@@ -160,6 +171,16 @@ fun EpisodeRow(ep: Episode, onToggle: () -> Unit, onPlay: () -> Unit) {
     Row(Modifier
         .fillMaxWidth()
         .padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        
+        AsyncImage(
+            model = ep.imageUrl,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp).padding(end = 8.dp),
+            contentScale = ContentScale.Crop,
+            error = rememberVectorPainter(Icons.Default.Podcasts),
+            placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+        )
+        
         Column(Modifier.weight(1f).clickable { onPlay() }) {
             Text(ep.title, style = MaterialTheme.typography.bodyLarge)
             if (ep.pubDate > 0) Text(java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.pubDate)), style = MaterialTheme.typography.bodySmall)
@@ -220,15 +241,24 @@ fun PlayerScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 IconButton(onClick = {
                     player.playWhenReady = false
                     onClose()
                 }) { Icon(Icons.Default.ArrowBack, contentDescription = "Close") }
-                Text(episode.title, style = MaterialTheme.typography.titleLarge)
+                Text(episode.title, style = MaterialTheme.typography.titleLarge, maxLines = 1, modifier = Modifier.weight(1f))
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
+            AsyncImage(
+                model = episode.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.size(240.dp),
+                contentScale = ContentScale.Crop,
+                error = rememberVectorPainter(Icons.Default.Podcasts),
+                placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+            )
+            Spacer(Modifier.height(16.dp))
             Text(if (episode.episodeNumber != null) "Episode ${episode.episodeNumber}" else "", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(4.dp))
             Text("Position: ${formatMillis(player.currentPosition)} / ${formatMillis(if (player.duration > 0) player.duration else (episode.durationMillis ?: 0L))}", style = MaterialTheme.typography.bodySmall)

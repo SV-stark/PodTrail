@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Podcast::class, Episode::class], version = 1, exportSchema = false)
+@Database(entities = [Podcast::class, Episode::class], version = 2, exportSchema = false)
 abstract class PodcastDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao
 
@@ -17,7 +17,9 @@ abstract class PodcastDatabase : RoomDatabase() {
                     context.applicationContext,
                     PodcastDatabase::class.java,
                     "podtrack.db"
-                ).build().also { INSTANCE = it }
+                )
+                .fallbackToDestructiveMigration()
+                .build().also { INSTANCE = it }
             }
     }
 }

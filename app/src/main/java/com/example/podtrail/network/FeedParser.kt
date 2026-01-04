@@ -13,38 +13,75 @@ data class ParsedEpisode(
     val guid: String,
     val pubDateMillis: Long,
     val audioUrl: String?,
+    val imageUrl: String?,
     val episodeNumber: Int?,
     val durationMillis: Long?
+)
+
+data class ParsedPodcast(
+    val title: String?,
+    val imageUrl: String?
 )
 
 class FeedParser {
     private val client = OkHttpClient()
 
-    suspend fun fetchFeed(url: String): Pair<String?, List<ParsedEpisode>> {
+    suspend fun fetchFeed(url: String): Pair<ParsedPodcast?, List<ParsedEpisode>> {
         val req = Request.Builder().url(url).build()
         client.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) return Pair(null, emptyList())
             val body = resp.body?.string() ?: return Pair(null, emptyList())
-            val title = parseFeedTitle(body)
+            val podcastInfo = parseFeedInfo(body)
             val episodes = parseEpisodes(body)
-            return Pair(title, episodes)
+            return Pair(podcastInfo, episodes)
         }
     }
 
-    private fun parseFeedTitle(xml: String): String? {
+    private fun parseFeedInfo(xml: String): ParsedPodcast? {
         val parser = xmlPullParser(xml)
         try {
             var event = parser.eventType
+            var title: String? = null
+            var imageUrl: String? = null
+
             while (event != XmlPullParser.END_DOCUMENT) {
-                if (event == XmlPullParser.START_TAG && parser.name.equals("title", ignoreCase = true)) {
-                    // ensure this is channel/title, but we accept first reasonable title
-                    parser.next()
-                    return parser.text
+                if (event == XmlPullParser.START_TAG) {
+                    val name = parser.name
+                    if (name.equals("title", ignoreCase = true) && title == null) {
+                        parser.next()
+                        title = parser.text
+                    } else if (name.equals("image", ignoreCase = true)) {
+                        // Standard RSS image
+                        imageUrl = parseImageTag(parser) ?: imageUrl
+                    } else if (name.equals("itunes:image", ignoreCase = true) && imageUrl == null) {
+                         imageUrl = parser.getAttributeValue(null, "href")
+                    }
+                }
+                 // naive stop if we have both, or break after first item... 
+                 // but better to scan a bit more? usually channel comes first.
+                 // let's break if we see "item"
+                if (event == XmlPullParser.START_TAG && parser.name.equals("item", ignoreCase = true)) {
+                    break
                 }
                 event = parser.next()
             }
+            return ParsedPodcast(title, imageUrl)
         } catch (e: Exception) { }
         return null
+    }
+
+    private fun parseImageTag(parser: XmlPullParser): String? {
+        // parser is at <image>, looking for <url> inside
+        var url: String? = null
+        var event = parser.next()
+        while (event != XmlPullParser.END_TAG || parser.name?.equals("image", ignoreCase = true) == false) {
+             if (event == XmlPullParser.START_TAG && parser.name.equals("url", ignoreCase = true)) {
+                 parser.next()
+                 url = parser.text
+             }
+             event = parser.next()
+        }
+        return url
     }
 
     private fun parseEpisodes(xml: String): List<ParsedEpisode> {
@@ -57,6 +94,7 @@ class FeedParser {
             var guid: String? = null
             var pubDate: Long = 0
             var audioUrl: String? = null
+            var imageUrl: String? = null
             var episodeNumber: Int? = null
             var durationMillis: Long? = null
 
@@ -66,28 +104,31 @@ class FeedParser {
                     val name = rawName.lowercase(Locale.ROOT)
                     if (name == "item") {
                         insideItem = true
-                        title = null; guid = null; pubDate = 0; audioUrl = null; episodeNumber = null; durationMillis = null
-                    } else if (insideItem && name == "title") {
-                        parser.next()
-                        title = parser.text
-                    } else if (insideItem && name == "guid") {
-                        parser.next()
-                        guid = parser.text
-                    } else if (insideItem && name == "pubdate") {
-                        parser.next()
-                        pubDate = parseDateToMillis(parser.text)
-                    } else if (insideItem && name.contains("enclosure")) {
-                        // enclosure often contains url attribute
-                        audioUrl = parser.getAttributeValue(null, "url") ?: audioUrl
-                    } else if (insideItem && name == "link" && audioUrl == null) {
-                        parser.next()
-                        audioUrl = parser.text
-                    } else if (insideItem && (name == "itunes:episode" || rawName.equals("episode", ignoreCase = true) || name.endsWith(":episode"))) {
-                        parser.next()
-                        episodeNumber = parser.text?.toIntOrNull()
-                    } else if (insideItem && (name == "itunes:duration" || name.endsWith(":duration") || rawName.equals("duration", ignoreCase = true))) {
-                        parser.next()
-                        durationMillis = parseDurationToMillis(parser.text)
+                        title = null; guid = null; pubDate = 0; audioUrl = null; imageUrl = null; episodeNumber = null; durationMillis = null
+                    } else if (insideItem) {
+                        if (name == "title") {
+                            parser.next()
+                            title = parser.text
+                        } else if (name == "guid") {
+                            parser.next()
+                            guid = parser.text
+                        } else if (name == "pubdate") {
+                            parser.next()
+                            pubDate = parseDateToMillis(parser.text)
+                        } else if (name.contains("enclosure")) {
+                            audioUrl = parser.getAttributeValue(null, "url") ?: audioUrl
+                        } else if (name == "link" && audioUrl == null) {
+                            parser.next()
+                            audioUrl = parser.text
+                        } else if (name == "itunes:image" || name.endsWith(":image")) {
+                            imageUrl = parser.getAttributeValue(null, "href")
+                        } else if (name == "itunes:episode" || rawName.equals("episode", ignoreCase = true) || name.endsWith(":episode")) {
+                            parser.next()
+                            episodeNumber = parser.text?.toIntOrNull()
+                        } else if (name == "itunes:duration" || name.endsWith(":duration") || rawName.equals("duration", ignoreCase = true)) {
+                            parser.next()
+                            durationMillis = parseDurationToMillis(parser.text)
+                        }
                     }
                 } else if (event == XmlPullParser.END_TAG && parser.name.equals("item", ignoreCase = true)) {
                     insideItem = false
@@ -98,6 +139,7 @@ class FeedParser {
                             guid = finalGuid,
                             pubDateMillis = pubDate,
                             audioUrl = audioUrl,
+                            imageUrl = imageUrl,
                             episodeNumber = episodeNumber,
                             durationMillis = durationMillis
                         )
@@ -138,11 +180,9 @@ class FeedParser {
     private fun parseDurationToMillis(text: String?): Long? {
         if (text == null) return null
         val trimmed = text.trim()
-        // If it's just seconds:
         if (trimmed.matches(Regex("^\\d+$"))) {
             return trimmed.toLong() * 1000L
         }
-        // If it's HH:MM:SS or MM:SS
         val parts = trimmed.split(":").map { it.toLongOrNull() ?: 0L }
         return when (parts.size) {
             3 -> (parts[0]*3600 + parts[1]*60 + parts[2]) * 1000

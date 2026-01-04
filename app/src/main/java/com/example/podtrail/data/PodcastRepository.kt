@@ -12,12 +12,13 @@ class PodcastRepository(private val dao: PodcastDao) {
 
     suspend fun addPodcast(feedUrl: String): Result<Long> = withContext(Dispatchers.IO) {
         try {
-            val (title, episodes) = parser.fetchFeed(feedUrl)
-            val podcastTitle = title ?: feedUrl
-
+            val (mappedPodcast, episodes) = parser.fetchFeed(feedUrl)
+            val podcastTitle = mappedPodcast?.title ?: feedUrl
+            val podcastImage = mappedPodcast?.imageUrl
+            
             // If podcast exists, reuse id; otherwise insert
             val existing = dao.getPodcastByFeedUrl(feedUrl)
-            val podcastId = existing?.id ?: dao.insertPodcast(Podcast(title = podcastTitle, feedUrl = feedUrl)).let { id ->
+            val podcastId = existing?.id ?: dao.insertPodcast(Podcast(title = podcastTitle, feedUrl = feedUrl, imageUrl = podcastImage)).let { id ->
                 if (id <= 0 && existing != null) existing.id else id
             }
 
@@ -30,6 +31,7 @@ class PodcastRepository(private val dao: PodcastDao) {
                     guid = it.guid,
                     pubDate = it.pubDateMillis,
                     audioUrl = it.audioUrl,
+                    imageUrl = it.imageUrl ?: podcastImage, // fallback to podcast image if episode image missing
                     episodeNumber = it.episodeNumber,
                     durationMillis = it.durationMillis
                 )
