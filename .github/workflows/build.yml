@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -33,3 +35,13 @@ jobs:
       with:
         name: app-debug-unsigned-apk
         path: app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Update Nightly Release
+      uses: softprops/action-gh-release@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        tag_name: nightly
+        prerelease: true
+        title: "Nightly Build"
+        files: app/build/outputs/apk/debug/app-debug.apk
+        overwrite: true
