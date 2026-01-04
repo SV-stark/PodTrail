@@ -48,6 +48,9 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 
 
 
@@ -278,7 +281,7 @@ fun PodcastCard(
                 contentDescription = null,
                 modifier = Modifier
                     .size(64.dp)
-                    .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 error = rememberVectorPainter(Icons.Default.Podcasts),
                 placeholder = rememberVectorPainter(Icons.Default.Podcasts)
@@ -303,7 +306,7 @@ fun PodcastCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
-                            .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.CircleShape),
+                            .clip(CircleShape),
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                     )
