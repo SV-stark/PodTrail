@@ -38,6 +38,10 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Settings
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,7 +80,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             topBar = {
                 TopAppBar(title = { Text("PodTrack") }, actions = {
                     IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
-                    IconButton(onClick = { showSettings = true }) { Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = "Settings") }
+                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
                 })
             }
         ) { padding ->
