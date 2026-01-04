@@ -1,25 +1,78 @@
 # PodTrail
 
-<img width="592" height="595" alt="podtrail" src="https://github.com/user-attachments/assets/9ff08f4a-5a53-46cb-b205-8d31fdbee25e" />
+<div align="center">
+  <img width="300" height="300" alt="PodTrail Logo" src="https://github.com/user-attachments/assets/9ff08f4a-5a53-46cb-b205-8d31fdbee25e" />
+  <br>
+  <br>
 
-PodTrail is a minimal Android podcast tracker (Kotlin + Jetpack Compose + ExoPlayer) that:
-- Lets you add podcast RSS feed URLs
-- Parses feeds (including iTunes tags: episode number, duration)
-- Stores podcasts & episodes in Room
-- Plays episode audio (ExoPlayer)
-- Tracks playback progress and marks episodes as "listened" when playback passes a threshold (90%)
+  ![Android Build](https://github.com/SV-stark/PodTrail/actions/workflows/build.yml/badge.svg)
+  ![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)
+  ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-purple.svg)
 
-Quickstart
-1. Create a new repository on GitHub named "podtrail" (or run the commands below).
-2. Clone the repo or create the Android Studio project locally.
-3. Add the source files under package `com.example.podtrack`.
-4. Build & run on an emulator or device with network access.
-5. Add a feed URL (public RSS), open a podcast, tap an episode to play. Playback progress is saved; if you listen >= 90% the episode will be marked as listened.
+  <p>
+    <b>A minimal, privacy-focused Android podcast tracker.</b>
+  </p>
+</div>
 
-Notes and next steps
-- Improve feed parsing (more itunes tags, artwork).
-- Add background playback & media notification.
-- Add sync across devices (server or cloud).
-- Add downloads & offline playback.
+---
 
-License: GPL v3 
+## 📖 Overview
+
+**PodTrail** is a lightweight Android application designed for podcast enthusiasts who value simplicity and privacy. Built with modern Android technologies, it offers a seamless experience for subscribing to, managing, and listening to your favorite podcasts.
+
+## ✨ Features
+
+- **RSS Feed Management**: Easily add podcast RSS URLs to subscribe.
+- **Smart Parsing**: Automatically parses feeds to extract metadata, including iTunes tags, episode numbers, and durations.
+- **Local Storage**: Persists podcasts and episode data locally using **Room** database.
+- **Robust Playback**: High-quality audio playback powered by **ExoPlayer**.
+- **Progress Tracking**: Remembers your playback position and automatically marks episodes as "listened" after 90% completion.
+
+## 🛠️ Tech Stack
+
+- **Language**: [Kotlin](https://kotlinlang.org/)
+- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetbrains/compose)
+- **Database**: [Room](https://developer.android.com/training/data-storage/room)
+- **Audio**: [ExoPlayer](https://developer.android.com/media/media3/exoplayer)
+
+## 🚀 Getting Started
+
+Follow these steps to build and run the application locally.
+
+### Prerequisites
+
+- **Android Studio** (Hedgehog or newer recommended)
+- **JDK 17**
+
+### Installation
+
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/SV-stark/PodTrail.git
+    cd PodTrail
+    ```
+
+2.  **Open in Android Studio**
+    - Open Android Studio and select "Open an existing Android Studio project".
+    - Navigate to the cloned `PodTrail` directory.
+
+3.  **Build the Project**
+    - Let Gradle sync the project dependencies.
+    - Run the app on an emulator or physical device.
+
+### Usage
+
+1.  **Add a Podcast**: Tap the "Add" button and enter a valid public RSS feed URL.
+2.  **Play an Episode**: Select a podcast, browse episodes, and tap to play.
+3.  **Track Progress**: Playback progress is saved automatically.
+
+## 🗺️ Roadmap
+
+- [ ] **Enhanced Parsing**: Support for more iTunes tags and high-resolution artwork.
+- [ ] **Background Playback**: Media notification controls and background service.
+- [ ] **Cloud Sync**: Sync subscriptions and progress across devices.
+- [ ] **Offline Mode**: Download episodes for offline listening.
+
+## 📄 License
+
+This project is licensed under the **GPL v3 License**. See the [LICENSE](LICENSE) file for details.
