@@ -30,6 +30,44 @@ jobs:
     - name: Build APK
       run: ./gradlew assembleDebug
 
+    - name: Run UI Tests & Screenshots
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 29
+        script: |
+          mkdir -p screenshots
+          adb shell mkdir -p /sdcard/Pictures/screenshots
+          adb shell chmod 777 /sdcard/Pictures/screenshots
+          ./gradlew connectedDebugAndroidTest
+          adb pull /sdcard/Pictures/screenshots/. screenshots/
+
+    - name: Update README with Screenshots
+      if: github.ref == 'refs/heads/main'
+      run: |
+        if [ -d "screenshots" ] && [ "$(ls -A screenshots)" ]; then
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          
+          # Move screenshots to a permanent doc folder if desired, or keep in root for simplicity
+          mkdir -p docs/screenshots
+          cp screenshots/*.png docs/screenshots/
+          
+          # Check if README already contains the screenshots section
+          if ! grep -q "## Screenshots" README.md; then
+            echo "" >> README.md
+            echo "## Screenshots" >> README.md
+            echo "Auto-generated from latest build." >> README.md
+            echo "" >> README.md
+            echo "| Home | Search | Episode List | Details | Details (Listened) |" >> README.md
+            echo "| --- | --- | --- | --- | --- |" >> README.md
+            echo "| <img src=\"docs/screenshots/1_home.png\" width=\"200\" /> | <img src=\"docs/screenshots/2_search.png\" width=\"200\" /> | <img src=\"docs/screenshots/3_episode_list.png\" width=\"200\" /> | <img src=\"docs/screenshots/4_episode_details.png\" width=\"200\" /> | <img src=\"docs/screenshots/5_details_listened.png\" width=\"200\" /> |" >> README.md
+          fi
+          
+          git add docs/screenshots/*.png README.md
+          git commit -m "Update screenshots and README [skip ci]" || echo "No changes to commit"
+          git push
+        fi
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
