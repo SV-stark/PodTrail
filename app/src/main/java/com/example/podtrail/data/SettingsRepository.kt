@@ -1,0 +1,55 @@
+package com.example.podtrail.data
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+data class AppSettings(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val useDynamicColor: Boolean = true,
+    val useAmoled: Boolean = false,
+    val customColor: Int = 0xFF6200EE.toInt() // Purple default
+)
+
+enum class ThemeMode { LIGHT, DARK, SYSTEM }
+
+class SettingsRepository(private val context: Context) {
+    private val dataStore = context.dataStore
+
+    private object Keys {
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val USE_DYNAMIC = booleanPreferencesKey("use_dynamic")
+        val USE_AMOLED = booleanPreferencesKey("use_amoled")
+        val CUSTOM_COLOR = intPreferencesKey("custom_color")
+    }
+
+    val settings: Flow<AppSettings> = dataStore.data.map { prefs ->
+        AppSettings(
+            themeMode = ThemeMode.valueOf(prefs[Keys.THEME_MODE] ?: ThemeMode.SYSTEM.name),
+            useDynamicColor = prefs[Keys.USE_DYNAMIC] ?: true,
+            useAmoled = prefs[Keys.USE_AMOLED] ?: false,
+            customColor = prefs[Keys.CUSTOM_COLOR] ?: 0xFF6200EE.toInt()
+        )
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { it[Keys.THEME_MODE] = mode.name }
+    }
+
+    suspend fun setDynamicColor(enable: Boolean) {
+        dataStore.edit { it[Keys.USE_DYNAMIC] = enable }
+    }
+
+    suspend fun setAmoled(enable: Boolean) {
+        dataStore.edit { it[Keys.USE_AMOLED] = enable }
+    }
+
+    suspend fun setCustomColor(color: Int) {
+        dataStore.edit { it[Keys.CUSTOM_COLOR] = color }
+    }
+}

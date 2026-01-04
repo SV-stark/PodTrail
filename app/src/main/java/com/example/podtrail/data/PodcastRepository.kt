@@ -33,7 +33,8 @@ class PodcastRepository(private val dao: PodcastDao) {
                     audioUrl = it.audioUrl,
                     imageUrl = it.imageUrl ?: podcastImage, // fallback to podcast image if episode image missing
                     episodeNumber = it.episodeNumber,
-                    durationMillis = it.durationMillis
+                    durationMillis = it.durationMillis,
+                    description = it.description
                 )
             }
             dao.insertEpisodes(eps) // IGNORE on conflict

@@ -53,33 +53,53 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
+    val context = LocalContext.current
+    val settingsRepo = remember { com.example.podtrail.data.SettingsRepository(context) }
+    val appSettings by settingsRepo.settings.collectAsState(initial = com.example.podtrail.data.AppSettings())
+
     var showSearch by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("PodTrack") }, actions = {
-                IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
-            })
-        }
-    ) { padding ->
-        Box(Modifier.padding(padding)) {
-            if (selectedEpisode != null) {
-                EpisodeDetailScreen(episode = selectedEpisode!!, vm = vm, onClose = { selectedEpisode = null })
-            } else if (showSearch) {
-                SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
-            } else if (selectedPodcast == null) {
-                PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
-            } else {
-                EpisodeListScreen(vm, selectedPodcast!!.id,
-                    onBack = { selectedPodcast = null },
-                    onDetails = { ep -> selectedEpisode = ep }
-                )
+    com.example.podtrail.ui.theme.PodTrailTheme(
+        darkTheme = when(appSettings.themeMode) {
+            com.example.podtrail.data.ThemeMode.LIGHT -> false
+            com.example.podtrail.data.ThemeMode.DARK -> true
+            else -> isSystemInDarkTheme()
+        },
+        dynamicColor = appSettings.useDynamicColor,
+        amoled = appSettings.useAmoled,
+        customColor = appSettings.customColor
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(title = { Text("PodTrack") }, actions = {
+                    IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
+                    IconButton(onClick = { showSettings = true }) { Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = "Settings") }
+                })
+            }
+        ) { padding ->
+            Box(Modifier.padding(padding)) {
+                if (showSettings) {
+                    com.example.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
+                } else if (selectedEpisode != null) {
+                    EpisodeDetailScreen(episode = selectedEpisode!!, vm = vm, onClose = { selectedEpisode = null })
+                } else if (showSearch) {
+                    SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
+                } else if (selectedPodcast == null) {
+                    PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
+                } else {
+                    EpisodeListScreen(vm, selectedPodcast!!.id,
+                        onBack = { selectedPodcast = null },
+                        onDetails = { ep -> selectedEpisode = ep }
+                    )
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () -> Unit) {
@@ -283,6 +303,20 @@ fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> U
             }
             if (episode.pubDate > 0) {
                  Text("Published: ${java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(episode.pubDate))}", style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(16.dp))
+            // Description might be HTML, but focusing on plain text or simple display. 
+            // For now, simple text display. Ideally use AndroidView for WebView or Html.fromHtml.
+            if (!episode.description.isNullOrBlank()) {
+                val decodedDescription = try {
+                    android.text.Html.fromHtml(episode.description, android.text.Html.FROM_HTML_MODE_COMPACT).toString()
+                } catch (e: Exception) { episode.description }
+                
+                Text(
+                    text = decodedDescription, 
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                )
             }
         }
         

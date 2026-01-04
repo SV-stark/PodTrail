@@ -20,6 +20,7 @@ data class Episode(
     // iTunes / enhanced fields:
     val episodeNumber: Int? = null,
     val durationMillis: Long? = null,
+    val description: String? = null,
 
     // playback tracking:
     val listened: Boolean = false

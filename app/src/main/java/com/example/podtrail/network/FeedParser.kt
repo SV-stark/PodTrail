@@ -15,7 +15,8 @@ data class ParsedEpisode(
     val audioUrl: String?,
     val imageUrl: String?,
     val episodeNumber: Int?,
-    val durationMillis: Long?
+    val durationMillis: Long?,
+    val description: String?
 )
 
 data class ParsedPodcast(
@@ -97,6 +98,7 @@ class FeedParser {
             var imageUrl: String? = null
             var episodeNumber: Int? = null
             var durationMillis: Long? = null
+            var description: String? = null
 
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
@@ -128,6 +130,13 @@ class FeedParser {
                         } else if (name == "itunes:duration" || name.endsWith(":duration") || rawName.equals("duration", ignoreCase = true)) {
                             parser.next()
                             durationMillis = parseDurationToMillis(parser.text)
+                        } else if (name == "description" && description == null) {
+                            parser.next()
+                            description = parser.text
+                        } else if (name == "content:encoded" || name == "itunes:summary") {
+                             // Prefer these over standard description if available
+                            parser.next()
+                            description = parser.text
                         }
                     }
                 } else if (event == XmlPullParser.END_TAG && parser.name.equals("item", ignoreCase = true)) {
@@ -141,7 +150,8 @@ class FeedParser {
                             audioUrl = audioUrl,
                             imageUrl = imageUrl,
                             episodeNumber = episodeNumber,
-                            durationMillis = durationMillis
+                            durationMillis = durationMillis,
+                            description = description
                         )
                     }
                 }
