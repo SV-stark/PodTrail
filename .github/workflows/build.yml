@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       contents: write
 
@@ -31,7 +31,7 @@ jobs:
       run: ./gradlew assembleDebug
 
     - name: Run UI Tests & Screenshots
-      uses: reactivecircus/android-emulator-runner@v2
+      uses: reactivecircus/android-emulator-runner@v3
       with:
         api-level: 29
         script: |
