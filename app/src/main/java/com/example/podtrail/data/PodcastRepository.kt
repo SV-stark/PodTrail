@@ -49,3 +49,4 @@ class PodcastRepository(private val dao: PodcastDao) {
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
         dao.updateEpisode(episode.copy(listened = listened))
     }
+}
