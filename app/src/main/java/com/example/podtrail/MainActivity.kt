@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.podtrail.data.Episode
 import com.example.podtrail.data.Podcast
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import com.example.podtrail.ui.PodcastViewModel
 import com.example.podtrail.ui.ProfileScreen
 import com.example.podtrail.ui.theme.PodTrailTheme
@@ -37,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.graphics.Brush
 
 import kotlinx.coroutines.isActive
 import androidx.compose.runtime.LaunchedEffect
@@ -58,7 +62,11 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Info
 
@@ -154,10 +162,16 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                             onClick = { selectedTab = 1 }
                         )
                         NavigationBarItem(
+                            icon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") },
+                            label = { Text("CALENDAR") },
+                            selected = selectedTab == 2,
+                            onClick = { selectedTab = 2 }
+                        )
+                        NavigationBarItem(
                             icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                             label = { Text("PROFILE") },
-                            selected = selectedTab == 2,
-                            onClick = { selectedTab = 2 } // Profile placeholder
+                            selected = selectedTab == 3,
+                            onClick = { selectedTab = 3 }
                         )
                     }
                 }
@@ -205,9 +219,28 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                 } else {
                     // Main Tabs
                     when (selectedTab) {
-                        0 -> PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
+                        0 -> com.example.podtrail.ui.HomeScreen(
+                            vm, 
+                            onOpenPodcast = { podcast -> selectedPodcast = podcast },
+                            onOpenEpisode = { episode -> 
+                                selectedEpisode = com.example.podtrail.data.EpisodeListItem(
+                                    id = episode.id,
+                                    podcastId = episode.podcastId,
+                                    title = episode.title,
+                                    pubDate = episode.pubDate,
+                                    imageUrl = episode.imageUrl,
+                                    episodeNumber = episode.episodeNumber,
+                                    durationMillis = episode.durationMillis,
+                                    listened = episode.listened,
+                                    listenedAt = episode.listenedAt,
+                                    playbackPosition = episode.playbackPosition,
+                                    lastPlayedTimestamp = episode.lastPlayedTimestamp
+                                )
+                            }
+                        )
                         1 -> DiscoverScreen(vm)
-                        2 -> ProfileScreen(vm, settingsRepo, appSettings)
+                        2 -> com.example.podtrail.ui.CalendarScreen(vm, onEpisodeClick = { ep -> selectedEpisode = ep })
+                        3 -> ProfileScreen(vm, settingsRepo, appSettings)
                     }
                 }
             }
@@ -495,15 +528,54 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeCard(ep: com.example.podtrail.data.EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
-    Card(
-        onClick = onDetails,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.StartToEnd) {
+                // Toggle Listened
+                onToggle()
+                return@rememberSwipeToDismissBoxState false // Reset (don't dismiss)
+            } else if (it == SwipeToDismissBoxValue.EndToStart) {
+                // Delete? No logic passed for delete yet. For ID 25, just marking listened is key interaction or "Action".
+                // Let's just reset for now or implementing a delete action requires passing a delete callback.
+                // Assuming "generic Swipe-to-Action".
+                return@rememberSwipeToDismissBoxState false
+            }
+            false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromEndToStart = false, // Disable delete for now unless we add callback
+        backgroundContent = {
+            val color = when (dismissState.targetValue) {
+                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+                else -> Color.Transparent
+            }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(color, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 20.dp),
+                contentAlignment = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+            ) {
+                 if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
+                     Icon(if (ep.listened) Icons.Default.Close else Icons.Default.Check, contentDescription = null)
+                 }
+            }
+        }
     ) {
+        Card(
+            onClick = onDetails,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -539,6 +611,13 @@ fun EpisodeCard(ep: com.example.podtrail.data.EpisodeListItem, onToggle: () -> U
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (ep.playbackPosition > 0 && !ep.listened) {
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(
+                            progress = ep.playbackPosition.toFloat() / ep.durationMillis.toFloat(),
+                            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape)
+                        )
+                    }
                 }
             }
             
@@ -548,6 +627,7 @@ fun EpisodeCard(ep: com.example.podtrail.data.EpisodeListItem, onToggle: () -> U
                 Checkbox(checked = ep.listened, onCheckedChange = { onToggle() })
             }
         }
+    }
     }
 }
 
@@ -561,64 +641,80 @@ private fun formatMillis(ms: Long): String {
 
 @Composable
 fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Close") }
-            Text("Episode Details", style = MaterialTheme.typography.titleLarge)
-        }
-        
-        Spacer(Modifier.height(16.dp))
-        
-        Column(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            AsyncImage(
-                model = episode.imageUrl,
-                contentDescription = null,
-                modifier = Modifier.size(240.dp),
-                contentScale = ContentScale.Crop,
-                error = rememberVectorPainter(Icons.Default.Podcasts),
-                placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+    Box(Modifier.fillMaxSize()) {
+        // Backdrop
+        AsyncImage(
+             model = episode.imageUrl,
+             contentDescription = null,
+             modifier = Modifier.fillMaxSize(),
+             contentScale = ContentScale.Crop,
+             alpha = 0.3f
+        )
+        Box(Modifier.fillMaxSize().background(
+            Brush.verticalGradient(
+                colors = listOf(MaterialTheme.colorScheme.background.copy(alpha=0.8f), MaterialTheme.colorScheme.background)
             )
-            Spacer(Modifier.height(24.dp))
-            Text(episode.title, style = MaterialTheme.typography.headlineMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            Spacer(Modifier.height(8.dp))
-            if (episode.episodeNumber != null) {
-                Text("Episode ${episode.episodeNumber}", style = MaterialTheme.typography.titleMedium)
+        ))
+
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Close") }
+                Text("Episode Details", style = MaterialTheme.typography.titleLarge)
             }
-            if (episode.durationMillis != null) {
-                Text("Duration: ${formatMillis(episode.durationMillis)}", style = MaterialTheme.typography.bodyMedium)
+            
+            Spacer(Modifier.height(16.dp))
+            
+            Column(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                AsyncImage(
+                    model = episode.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.size(240.dp).clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop,
+                    error = rememberVectorPainter(Icons.Default.Podcasts),
+                    placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+                )
+                Spacer(Modifier.height(24.dp))
+                Text(episode.title, style = MaterialTheme.typography.headlineMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
+                if (episode.episodeNumber != null) {
+                    Text("Episode ${episode.episodeNumber}", style = MaterialTheme.typography.titleMedium)
+                }
+                if (episode.durationMillis != null) {
+                    Text("Duration: ${formatMillis(episode.durationMillis)}", style = MaterialTheme.typography.bodyMedium)
+                }
+                if (episode.pubDate > 0) {
+                     Text("Published: ${java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(episode.pubDate))}", style = MaterialTheme.typography.bodyMedium)
+                }
+                Spacer(Modifier.height(16.dp))
+                // Description might be HTML, but focusing on plain text or simple display. 
+                // For now, simple text display. Ideally use AndroidView for WebView or Html.fromHtml.
+                if (!episode.description.isNullOrBlank()) {
+                    val decodedDescription = try {
+                        android.text.Html.fromHtml(episode.description, android.text.Html.FROM_HTML_MODE_COMPACT).toString()
+                    } catch (e: Exception) { episode.description }
+                    
+                    Text(
+                        text = decodedDescription, 
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                    )
+                }
             }
-            if (episode.pubDate > 0) {
-                 Text("Published: ${java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(episode.pubDate))}", style = MaterialTheme.typography.bodyMedium)
+            
+            Spacer(Modifier.height(16.dp))
+            
+            Button(
+                onClick = { vm.setListened(episode, !episode.listened) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                 Text(if (episode.listened) "Mark Unlistened" else "Mark Listened")
             }
             Spacer(Modifier.height(16.dp))
-            // Description might be HTML, but focusing on plain text or simple display. 
-            // For now, simple text display. Ideally use AndroidView for WebView or Html.fromHtml.
-            if (!episode.description.isNullOrBlank()) {
-                val decodedDescription = try {
-                    android.text.Html.fromHtml(episode.description, android.text.Html.FROM_HTML_MODE_COMPACT).toString()
-                } catch (e: Exception) { episode.description }
-                
-                Text(
-                    text = decodedDescription, 
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                )
-            }
         }
-        
-        Spacer(Modifier.height(16.dp))
-        
-        Button(
-            onClick = { vm.setListened(episode, !episode.listened) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-             Text(if (episode.listened) "Mark Unlistened" else "Mark Listened")
-        }
-        Spacer(Modifier.height(16.dp))
     }
 }
 

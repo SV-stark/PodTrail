@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Podcast::class, Episode::class], version = 5, exportSchema = false)
+@Database(entities = [Podcast::class, Episode::class], version = 6, exportSchema = false)
 abstract class PodcastDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao
 
@@ -18,6 +18,7 @@ abstract class PodcastDatabase : RoomDatabase() {
                     PodcastDatabase::class.java,
                     "podtrack.db"
                 )
+                .addMigrations(MIGRATION_5_6)
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
             }
@@ -28,9 +29,18 @@ abstract class PodcastDatabase : RoomDatabase() {
         }
     }
 
+    }
+
     fun checkpoint() {
         if (!isOpen) return
         val db = openHelper.writableDatabase
         db.query("PRAGMA wal_checkpoint(FULL)").close()
+    }
+}
+
+val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE episodes ADD COLUMN playbackPosition INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE episodes ADD COLUMN lastPlayedTimestamp INTEGER NOT NULL DEFAULT 0")
     }
 }

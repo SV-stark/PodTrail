@@ -4,6 +4,8 @@ import com.example.podtrail.network.FeedParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import java.util.Calendar
 
 class PodcastRepository(private val dao: PodcastDao) {
     private val parser = FeedParser()
@@ -63,6 +65,70 @@ class PodcastRepository(private val dao: PodcastDao) {
 
     fun getHistory() = dao.getHistory()
     
+    fun getAllEpisodesLite() = dao.getAllEpisodesLite()
+
+    fun getTotalTimeListened() = dao.getTotalDurationListened().map { it ?: 0L }
+
+    fun getCurrentStreak() = dao.getAllLastPlayedTimestamps().map { timestamps ->
+        if (timestamps.isEmpty()) return@map 0
+        
+        val uniqueDays = sortedSetOf<Long>()
+        val cal = Calendar.getInstance()
+        
+        timestamps.forEach { ts ->
+            cal.timeInMillis = ts
+            // Create a unique day key: YYYYMMDD or just epoch day (local)
+            // Using year * 1000 + dayOfYear for simplicity/uniqueness
+            val dayKey = (cal.get(Calendar.YEAR) * 1000 + cal.get(Calendar.DAY_OF_YEAR)).toLong()
+            uniqueDays.add(dayKey)
+        }
+        
+        // Calculate streak
+        var streak = 0
+        val rightNow = Calendar.getInstance()
+        val todayKey = (rightNow.get(Calendar.YEAR) * 1000 + rightNow.get(Calendar.DAY_OF_YEAR)).toLong()
+        
+        // Check today or yesterday to start streak
+        if (uniqueDays.contains(todayKey)) {
+            streak++
+            // Check previous days
+            var checkDay = Calendar.getInstance()
+            checkDay.add(Calendar.DAY_OF_YEAR, -1)
+            while (true) {
+                 val key = (checkDay.get(Calendar.YEAR) * 1000 + checkDay.get(Calendar.DAY_OF_YEAR)).toLong()
+                 if (uniqueDays.contains(key)) {
+                     streak++
+                     checkDay.add(Calendar.DAY_OF_YEAR, -1)
+                 } else {
+                     break
+                 }
+            }
+        } else {
+            // Check if yesterday was active (streak continues but not incremented for today yet? 
+            // Usually streak implies consecutive days ending Today or Yesterday.
+            // If I listened yesterday, my streak is valid.
+            var checkDay = Calendar.getInstance()
+            checkDay.add(Calendar.DAY_OF_YEAR, -1)
+            val yesterdayKey = (checkDay.get(Calendar.YEAR) * 1000 + checkDay.get(Calendar.DAY_OF_YEAR)).toLong()
+            
+            if (uniqueDays.contains(yesterdayKey)) {
+                streak++ // Counts yesterday
+                checkDay.add(Calendar.DAY_OF_YEAR, -1) 
+                 while (true) {
+                     val key = (checkDay.get(Calendar.YEAR) * 1000 + checkDay.get(Calendar.DAY_OF_YEAR)).toLong()
+                     if (uniqueDays.contains(key)) {
+                         streak++
+                         checkDay.add(Calendar.DAY_OF_YEAR, -1)
+                     } else {
+                         break
+                     }
+                }
+            }
+        }
+        
+        streak
+    }
+    
     suspend fun getUpNext(): List<Episode> = withContext(Dispatchers.IO) {
         val podcasts = dao.getAllPodcasts().first()
         val upNextList = mutableListOf<Episode>()
@@ -78,17 +144,23 @@ class PodcastRepository(private val dao: PodcastDao) {
 
     suspend fun markEpisodeListened(episode: EpisodeListItem, listened: Boolean) {
         val fullEpisode = dao.getEpisodeById(episode.id) ?: return
+        val now = System.currentTimeMillis()
         dao.updateEpisode(fullEpisode.copy(
             listened = listened,
-            listenedAt = if (listened) System.currentTimeMillis() else null
+            listenedAt = if (listened) now else null,
+            lastPlayedTimestamp = if (listened) now else fullEpisode.lastPlayedTimestamp,
+            playbackPosition = if (listened) 0 else fullEpisode.playbackPosition
         ))
     }
     
     // overload for full episode object if needed
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
+        val now = System.currentTimeMillis()
         dao.updateEpisode(episode.copy(
             listened = listened,
-            listenedAt = if (listened) System.currentTimeMillis() else null
+            listenedAt = if (listened) now else null,
+            lastPlayedTimestamp = if (listened) now else episode.lastPlayedTimestamp,
+            playbackPosition = if (listened) 0 else episode.playbackPosition
         ))
     }
 

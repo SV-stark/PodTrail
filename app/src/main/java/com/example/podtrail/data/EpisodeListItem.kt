@@ -9,5 +9,7 @@ data class EpisodeListItem(
     val episodeNumber: Int?,
     val durationMillis: Long?,
     val listened: Boolean,
-    val listenedAt: Long?
+    val listenedAt: Long?,
+    val playbackPosition: Long = 0,
+    val lastPlayedTimestamp: Long = 0
 )

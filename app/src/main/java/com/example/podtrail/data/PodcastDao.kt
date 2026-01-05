@@ -33,13 +33,13 @@ interface PodcastDao {
     @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
     fun getEpisodesForPodcast(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
     fun getEpisodesForPodcastLite(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
     fun getEpisodesForPodcastAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
     
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
     fun getEpisodesForPodcastLiteAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
@@ -64,8 +64,15 @@ interface PodcastDao {
     suspend fun deleteEpisodesByPodcastId(podcastId: Long)
 
     @Transaction
-    suspend fun deletePodcast(podcastId: Long) {
-        deleteEpisodesByPodcastId(podcastId)
         deletePodcastById(podcastId)
     }
+
+    @Query("SELECT SUM(durationMillis) FROM episodes WHERE listened = 1")
+    fun getTotalDurationListened(): Flow<Long?>
+
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes ORDER BY pubDate DESC")
+    fun getAllEpisodesLite(): Flow<List<EpisodeListItem>>
+
+    @Query("SELECT lastPlayedTimestamp FROM episodes WHERE lastPlayedTimestamp > 0 ORDER BY lastPlayedTimestamp DESC")
+    fun getAllLastPlayedTimestamps(): Flow<List<Long>>
 }

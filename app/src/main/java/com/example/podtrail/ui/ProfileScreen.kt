@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +49,9 @@ fun ProfileScreen(
     val podcasts by vm.podcasts.collectAsState()
     val totalPodcasts = podcasts.size
     val totalEpisodesListened = podcasts.sumOf { it.listenedEpisodes }
+    val totalTimeListened by vm.totalTimeListened.collectAsState()
+    val currentStreak by vm.currentStreak.collectAsState()
+    val badges by vm.badges.collectAsState()
     
     // Genre Breakdown
     val genreMap = remember(podcasts) {
@@ -172,6 +177,49 @@ fun ProfileScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+        
+        Spacer(Modifier.height(16.dp))
+
+        // Time & Streak Stats
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            StatCard(
+                title = "Total Time\nListened",
+                value = formatTimeListened(totalTimeListened),
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = "Current\nStreak",
+                value = "$currentStreak days",
+                modifier = Modifier.weight(1f)
+            )
+        }
+        
+        Spacer(Modifier.height(24.dp))
+        
+        // Badges Section
+        Text(
+            text = "Badges",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            badges.forEach { badge ->
+                 BadgeCard(badge)
+            }
+        }
 
         Spacer(Modifier.height(24.dp))
 
@@ -287,4 +335,46 @@ fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+    }
+}
+
+@Composable
+fun BadgeCard(badge: com.example.podtrail.ui.Badge) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (badge.unlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.size(100.dp, 120.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = if (badge.unlocked) badge.icon else Icons.Default.Lock,
+                contentDescription = null,
+                tint = if (badge.unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.5f),
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                badge.name, 
+                style = MaterialTheme.typography.labelMedium, 
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = if (badge.unlocked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private fun formatTimeListened(millis: Long): String {
+    val seconds = millis / 1000
+    val days = seconds / (24 * 3600)
+    val hours = (seconds % (24 * 3600)) / 3600
+    val minutes = (seconds % 3600) / 60
+    
+    return if (days > 0) "${days}d ${hours}h" else "${hours}h ${minutes}m"
 }

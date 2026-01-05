@@ -9,7 +9,21 @@ import com.example.podtrail.data.Episode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.NightsStay
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.ui.graphics.vector.ImageVector
+
+data class Badge(
+    val name: String,
+    val description: String,
+    val icon: ImageVector,
+    val unlocked: Boolean
+)
 
 class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     private val db = PodcastDatabase.getInstance(app)
@@ -121,6 +135,45 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     val history = repo.getHistory().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    
+    val totalTimeListened = repo.getTotalTimeListened()
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0L)
+        
+    val allEpisodesLite = repo.getAllEpisodesLite()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        
+    val currentStreak = repo.getCurrentStreak()
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+        
+    val badges = combine(totalTimeListened, currentStreak, podcasts) { time, streak, podList ->
+        listOf(
+            Badge(
+                "Newbie", 
+                "Listen to your first episode", 
+                Icons.Default.Mic, 
+                time > 0
+            ),
+            Badge(
+                "Regular", 
+                "3 Day Streak", 
+                Icons.Default.LocalFireDepartment, 
+                streak >= 3
+            ),
+            Badge(
+                "Super Fan", 
+                "Listen for over 24 hours", 
+                Icons.Default.Timer, 
+                time >= 24 * 3600 * 1000
+            ),
+            Badge(
+                "Collector",
+                "Subscribe to 5 podcasts",
+                Icons.Default.Mic,
+                podList.size >= 5
+            )
+            // Night Owl / Early Bird require checking specific listen times history, skipping for MVP complexity
+        )
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _upNext = kotlinx.coroutines.flow.MutableStateFlow<List<Episode>>(emptyList())
     val upNext = _upNext.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
