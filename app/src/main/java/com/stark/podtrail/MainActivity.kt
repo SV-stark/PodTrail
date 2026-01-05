@@ -143,7 +143,16 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                         actions = {
                             IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
                              // Refresh button to fetch new episodes
-                            IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh") } 
+                            val isRefreshing by vm.isRefreshing.collectAsState()
+                            if (isRefreshing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.padding(12.dp).size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh") }
+                            } 
                             IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
                         },
                         colors = topAppBarColors
@@ -605,26 +614,36 @@ fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Uni
             Spacer(Modifier.width(16.dp))
             
             // Action Button (Checkmark)
-            IconButton(
-                onClick = onToggle,
+            Box(
                 modifier = Modifier
-                    .size(24.dp)
-                    .background(
-                        color = if (ep.listened) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        shape = CircleShape
-                    )
-                    .border(
-                        width = 1.5.dp,
-                        color = if (ep.listened) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        shape = CircleShape
-                    )
+                    .size(48.dp) // Accessible touch target
+                    .clip(CircleShape)
+                    .clickable(onClick = onToggle),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Check, 
-                    contentDescription = "Listened",
-                    tint = if (ep.listened) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(20.dp) // Visual size (optimized as requested)
+                        .background(
+                            color = if (ep.listened) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.5.dp,
+                            color = if (ep.listened) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (ep.listened) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Listened",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
             }
         }
     }

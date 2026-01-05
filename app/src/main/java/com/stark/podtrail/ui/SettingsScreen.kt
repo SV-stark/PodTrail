@@ -134,8 +134,31 @@ fun SettingsScreen(
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            colors.drop(8).take(8).forEach { color ->
+                            colors.drop(8).take(7).forEach { color -> // Take 7 to make room for custom button
                                 ColorItem(color, currentSettings.customColor, scope, repo)
+                            }
+                            
+                            // Custom Color Button
+                            var showColorPicker by remember { mutableStateOf(false) }
+                            Box(
+                                Modifier
+                                    .size(36.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                    .clickable { showColorPicker = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Custom Color", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            if (showColorPicker) {
+                                ColorPickerDialog(
+                                    initialColor = currentSettings.customColor,
+                                    onDismiss = { showColorPicker = false },
+                                    onColorSelected = { color -> 
+                                        scope.launch { repo.setCustomColor(color) }
+                                        showColorPicker = false 
+                                    }
+                                )
                             }
                         }
                     }

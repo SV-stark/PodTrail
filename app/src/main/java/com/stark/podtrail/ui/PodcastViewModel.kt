@@ -197,12 +197,19 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private val _isRefreshing = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.stateIn(viewModelScope, SharingStarted.Lazily, false)
+
     fun refreshAllPodcasts() {
+        if (_isRefreshing.value) return
         viewModelScope.launch {
-            repo.refreshAllPodcasts()
-            refreshUpNext()
+            _isRefreshing.value = true
+            try {
+                repo.refreshAllPodcasts()
+                refreshUpNext()
+            } finally {
+                _isRefreshing.value = false
+            }
         }
     }
-
-
 }

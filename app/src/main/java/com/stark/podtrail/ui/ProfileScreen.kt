@@ -11,6 +11,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -80,6 +85,76 @@ fun ProfileScreen(
         }
     }
 
+    // State for background selection
+    var showBgSelectionDialog by remember { mutableStateOf(false) }
+    var showPodcastPicker by remember { mutableStateOf(false) }
+
+    if (showBgSelectionDialog) {
+        AlertDialog(
+            onDismissRequest = { showBgSelectionDialog = false },
+            title = { Text("Change Background") },
+            text = {
+                Column {
+                    ListItem(
+                        headlineContent = { Text("Choose from Library") },
+                        leadingContent = { Icon(Icons.Default.Collections, null) },
+                        modifier = Modifier.clickable { 
+                            showBgSelectionDialog = false
+                            showPodcastPicker = true
+                        }
+                    )
+                    ListItem(
+                        headlineContent = { Text("Custom Image") },
+                        leadingContent = { Icon(Icons.Default.Image, null) },
+                        modifier = Modifier.clickable { 
+                            showBgSelectionDialog = false
+                            bgImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showBgSelectionDialog = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (showPodcastPicker) {
+        AlertDialog(
+            onDismissRequest = { showPodcastPicker = false },
+            title = { Text("Select Podcast") },
+            text = {
+                Box(Modifier.height(300.dp)) {
+                    if (podcasts.isEmpty()) {
+                        Text("No podcasts subscribed.", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(podcasts) { pStats ->
+                                AsyncImage(
+                                    model = pStats.podcast.imageUrl,
+                                    contentDescription = pStats.podcast.title,
+                                    modifier = Modifier
+                                        .aspectRatio(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            scope.launch { settingsRepo.setProfileBg(pStats.podcast.imageUrl ?: "") }
+                                            showPodcastPicker = false
+                                        },
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showPodcastPicker = false }) { Text("Cancel") } }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,9 +171,7 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .clickable { 
-                        bgImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    }
+                    .clickable { showBgSelectionDialog = true }
             ) {
                 if (appSettings.profileBgUri != null) {
                     AsyncImage(
