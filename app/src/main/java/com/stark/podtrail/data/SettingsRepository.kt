@@ -91,7 +91,8 @@ class SettingsRepository(private val context: Context) {
                 val dao = db.podcastDao()
                 
                 // To ensure atomicity:
-                androidx.room.withTransaction(db) {
+                // To ensure atomicity:
+                db.withTransaction {
                     dao.deleteAllEpisodes()
                     dao.deleteAllPodcasts()
                     dao.insertPodcasts(backupData.podcasts)
