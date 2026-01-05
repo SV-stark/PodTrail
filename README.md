@@ -22,10 +22,17 @@
 
 ## ✨ Features
 
-- **Podcast Search**:  Search for podcasts directly using the **iTunes API**.
+- **Podcast Search & Discovery**:  Search for podcasts directly using the **iTunes API** or explore top charts by genre.
 - **RSS Feed Management**: Easily add podcast RSS URLs to subscribe.
-- **Smart Parsing**: Automatically parses feeds to extract metadata, including iTunes tags, episode numbers, and durations.
-- **Episode Tracking**: Manually mark episodes as "listened" to keep track of your history.
+- **Smart Parsing**: Automatically parses feeds to extract metadata, including iTunes tags, episode numbers, and high-quality artwork.
+- **Modern UI**: Clean **Material 3** interface with Dynamic Color support, AMOLED mode, and customizable themes.
+- **Episode Tracking**: 
+    - Track listening history and streaks. 
+    - Sort episodes by **Date** (Newest/Oldest) or **Duration** (Shortest/Longest).
+    - Mark episodes as listened with a single tap.
+- **Real-Time Details**: View full episode descriptions, including rich text, fetched in real-time.
+- **Personalized Profile**: Visualize your listening stats with a dynamic genre breakdown chart.
+- **Calendar View**: Review your listening history organized by date.
 
 ## 🛠️ Tech Stack
 
@@ -33,6 +40,8 @@
 - **UI Framework**: [Jetpack Compose](https://developer.android.com/jetbrains/compose)
 - **Database**: [Room](https://developer.android.com/training/data-storage/room)
 - **Network**: [OkHttp](https://square.github.io/okhttp/) & [Gson](https://github.com/google/gson)
+- **Architecture**: MVVM with Uni-directional Data Flow
+- **Image Loading**: [Coil](https://coil-kt.github.io/coil/)
 
 ## 🚀 Getting Started
 
@@ -61,13 +70,15 @@ Follow these steps to build and run the application locally.
 
 ### Usage
 
-1.  **Add a Podcast**: Tap the "Add" button and enter a valid public RSS feed URL.
-2.  **Track Episodes**: Tap on an episode to view details and mark it as listened.
+1.  **Add a Podcast**: Tap the "Add" button to search or enter a valid RSS feed URL.
+2.  **Discover**: Browse curated lists and genres in the Discover tab.
+3.  **Manage Episodes**: Open a podcast to view episodes. use the Sort button to organize them.
+4.  **Track Progress**: Mark episodes as listened. Check the Profile tab to see your listening stats and genre breakdown.
 
 ## 🗺️ Roadmap
 
-- [ ] **Enhanced Parsing**: Support for more iTunes tags and high-resolution artwork.
 - [ ] **Cloud Sync**: Sync subscriptions and progress across devices.
+- [ ] **Offline Playback**: Download episodes for offline listening.
 
 
 ## 📄 License
