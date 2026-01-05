@@ -73,6 +73,9 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Info
 
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.CheckCircle
 
 
 
@@ -505,7 +508,8 @@ fun PodcastCard(
 @Composable
 fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onDetails: (com.stark.podtrail.data.EpisodeListItem) -> Unit) {
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
-    val sortOrder by vm.sortOrder.collectAsState()
+    val sortOption by vm.sortOption.collectAsState()
+    var showSortMenu by remember { mutableStateOf(false) }
 
     Column {
         TopAppBar(
@@ -514,14 +518,41 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
                 IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
             },
             actions = {
-                IconButton(onClick = { vm.toggleSortOrder() }) {
-                    Icon(Icons.Default.Sort, contentDescription = "Sort")
+                Box {
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(Icons.Default.Sort, contentDescription = "Sort")
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Newest First") },
+                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_NEWEST); showSortMenu = false },
+                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_NEWEST) Icon(Icons.Default.Check, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Oldest First") },
+                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_OLDEST); showSortMenu = false },
+                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_OLDEST) Icon(Icons.Default.Check, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Shortest First") },
+                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_SHORTEST); showSortMenu = false },
+                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_SHORTEST) Icon(Icons.Default.Check, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Longest First") },
+                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_LONGEST); showSortMenu = false },
+                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_LONGEST) Icon(Icons.Default.Check, null) }
+                        )
+                    }
                 }
             }
         )
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(episodes) { ep ->
                 EpisodeCard(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onDetails(ep) })
@@ -533,103 +564,89 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (it == SwipeToDismissBoxValue.StartToEnd) {
-                // Toggle Listened
-                onToggle()
-                return@rememberSwipeToDismissBoxState false // Reset (don't dismiss)
-            } else if (it == SwipeToDismissBoxValue.EndToStart) {
-                // Delete? No logic passed for delete yet. For ID 25, just marking listened is key interaction or "Action".
-                // Let's just reset for now or implementing a delete action requires passing a delete callback.
-                // Assuming "generic Swipe-to-Action".
-                return@rememberSwipeToDismissBoxState false
-            }
-            false
-        }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromEndToStart = false, // Disable delete for now unless we add callback
-        backgroundContent = {
-            val color = when (dismissState.targetValue) {
-                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-                else -> Color.Transparent
-            }
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(color, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
-            ) {
-                 if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
-                     Icon(if (ep.listened) Icons.Default.Close else Icons.Default.Check, contentDescription = null)
-                 }
-            }
-        }
+    Card(
+        onClick = onDetails,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Card(
-            onClick = onDetails,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
                 model = ep.imageUrl,
                 contentDescription = null,
-                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).padding(end = 8.dp),
+                modifier = Modifier.size(72.dp).clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 error = rememberVectorPainter(Icons.Default.Podcasts),
                 placeholder = rememberVectorPainter(Icons.Default.Podcasts)
             )
             
+            Spacer(Modifier.width(16.dp))
+            
             Column(Modifier.weight(1f)) {
                 Text(
                     text = ep.title, 
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     maxLines = 2,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
-                if (ep.pubDate > 0) {
-                    Text(
-                        text = java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.pubDate)), 
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                
+                val dateStr = if (ep.pubDate > 0) java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ep.pubDate)) else ""
+                val durStr = if (ep.durationMillis != null) "Duration: ${formatMillis(ep.durationMillis)}" else ""
+                
+                Text(
+                    text = if (dateStr.isNotEmpty()) "$dateStr\n$durStr" else durStr,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                if (ep.playbackPosition > 0 && !ep.listened && ep.durationMillis != null) {
+                    Spacer(Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { ep.playbackPosition.toFloat() / ep.durationMillis.toFloat() },
+                        modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
                     )
-                }
-                if (ep.durationMillis != null) {
-                    Text(
-                        text = "Duration: ${formatMillis(ep.durationMillis)}", 
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (ep.playbackPosition > 0 && !ep.listened) {
-                        Spacer(Modifier.height(4.dp))
-                        LinearProgressIndicator(
-                            progress = ep.playbackPosition.toFloat() / ep.durationMillis.toFloat(),
-                            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape)
-                        )
-                    }
                 }
             }
             
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(16.dp))
             
-            Column(horizontalAlignment = Alignment.End) {
-                Checkbox(checked = ep.listened, onCheckedChange = { onToggle() })
+            // Action Button (Checkmark)
+            IconButton(
+                onClick = onToggle,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = if (ep.listened) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = 2.dp,
+                        color = if (ep.listened) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        shape = CircleShape
+                    )
+            ) {
+                if (ep.listened) {
+                    Icon(
+                        imageVector = Icons.Default.Check, 
+                        contentDescription = "Listened",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                } 
+                // If not listened, show nothing inside (just border), or maybe a small tick? Mockup implies empty if unchecked? 
+                // Or "Check" icon that becomes filled. 
+                // Mockup shows: Filled Blue Circle with White Checkmark.
+                // It suggests "Tap to Mark Done".
+                // If unchecked, it usually is an empty circle.
+                // I'll leave it empty if unchecked.
             }
         }
-    }
     }
 }
 

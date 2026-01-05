@@ -40,8 +40,8 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private val _sortOrder = kotlinx.coroutines.flow.MutableStateFlow(false) // false = DESC, true = ASC
-    val sortOrder = _sortOrder.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    private val _sortOption = kotlinx.coroutines.flow.MutableStateFlow(SortOption.DATE_NEWEST)
+    val sortOption = _sortOption.stateIn(viewModelScope, SharingStarted.Lazily, SortOption.DATE_NEWEST)
     
     private val searcher = com.stark.podtrail.network.ItunesPodcastSearcher()
     private val _searchResults = kotlinx.coroutines.flow.MutableStateFlow<List<com.stark.podtrail.network.SearchResult>>(emptyList())
@@ -97,12 +97,12 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         _searchResults.value = emptyList()
     }
 
-    fun toggleSortOrder() {
-        _sortOrder.value = !_sortOrder.value
+    fun setSortOption(option: SortOption) {
+        _sortOption.value = option
     }
 
-    fun episodesFor(podcastId: Long) = _sortOrder.flatMapLatest { isAsc ->
-        repo.episodesForPodcast(podcastId, isAsc)
+    fun episodesFor(podcastId: Long) = _sortOption.flatMapLatest { option ->
+        repo.episodesForPodcast(podcastId, option)
     }
 
     suspend fun getEpisode(id: Long) = repo.getEpisode(id)

@@ -42,6 +42,12 @@ interface PodcastDao {
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
     fun getEpisodesForPodcastLiteAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
+    fun getEpisodesForPodcastLiteDurationAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
+
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
+    fun getEpisodesForPodcastLiteDurationDesc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
+
     @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
     fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>
 

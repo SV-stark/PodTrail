@@ -58,8 +58,13 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
     }
 
-    fun episodesForPodcast(podcastId: Long, isAsc: Boolean = false) = 
-        if (isAsc) dao.getEpisodesForPodcastLiteAsc(podcastId) else dao.getEpisodesForPodcastLite(podcastId)
+    fun episodesForPodcast(podcastId: Long, sortOption: com.stark.podtrail.ui.SortOption = com.stark.podtrail.ui.SortOption.DATE_NEWEST) = 
+        when (sortOption) {
+            com.stark.podtrail.ui.SortOption.DATE_NEWEST -> dao.getEpisodesForPodcastLite(podcastId)
+            com.stark.podtrail.ui.SortOption.DATE_OLDEST -> dao.getEpisodesForPodcastLiteAsc(podcastId)
+            com.stark.podtrail.ui.SortOption.DURATION_SHORTEST -> dao.getEpisodesForPodcastLiteDurationAsc(podcastId)
+            com.stark.podtrail.ui.SortOption.DURATION_LONGEST -> dao.getEpisodesForPodcastLiteDurationDesc(podcastId)
+        }
 
     suspend fun getEpisode(id: Long) = dao.getEpisodeById(id)
 
