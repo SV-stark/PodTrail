@@ -1,4 +1,4 @@
-package com.example.podtrail
+package com.stark.podtrail
 
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -9,9 +9,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.podtrail.data.Episode
-import com.example.podtrail.data.Podcast
-import com.example.podtrail.data.PodcastDatabase
+import com.stark.podtrail.data.Episode
+import com.stark.podtrail.data.Podcast
+import com.stark.podtrail.data.PodcastDatabase
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -93,3 +93,4 @@ class GenerateScreenshotsTest {
         }
     }
 }
+

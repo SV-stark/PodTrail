@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.podtrail"  // set your app's base package here
+    namespace = "com.stark.podtrail"  // set your app's base package here
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.podtrail"
+        applicationId = "com.stark.podtrail"
         minSdk = 23
         targetSdk = 35
         versionCode = 1

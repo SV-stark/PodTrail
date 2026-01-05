@@ -12,3 +12,4 @@ class AppTest {
         assertNotNull(classUnderTest.greeting, "app should have a greeting")
     }
 }
+

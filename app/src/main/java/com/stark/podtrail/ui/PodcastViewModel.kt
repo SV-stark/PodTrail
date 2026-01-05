@@ -1,11 +1,11 @@
-package com.example.podtrail.ui
+package com.stark.podtrail.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.podtrail.data.PodcastDatabase
-import com.example.podtrail.data.PodcastRepository
-import com.example.podtrail.data.Episode
+import com.stark.podtrail.data.PodcastDatabase
+import com.stark.podtrail.data.PodcastRepository
+import com.stark.podtrail.data.Episode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -43,11 +43,11 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     private val _sortOrder = kotlinx.coroutines.flow.MutableStateFlow(false) // false = DESC, true = ASC
     val sortOrder = _sortOrder.stateIn(viewModelScope, SharingStarted.Lazily, false)
     
-    private val searcher = com.example.podtrail.network.ItunesPodcastSearcher()
-    private val _searchResults = kotlinx.coroutines.flow.MutableStateFlow<List<com.example.podtrail.network.SearchResult>>(emptyList())
+    private val searcher = com.stark.podtrail.network.ItunesPodcastSearcher()
+    private val _searchResults = kotlinx.coroutines.flow.MutableStateFlow<List<com.stark.podtrail.network.SearchResult>>(emptyList())
     val searchResults = _searchResults.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val _discoverPodcasts = kotlinx.coroutines.flow.MutableStateFlow<List<com.example.podtrail.network.SearchResult>>(emptyList())
+    private val _discoverPodcasts = kotlinx.coroutines.flow.MutableStateFlow<List<com.stark.podtrail.network.SearchResult>>(emptyList())
     val discoverPodcasts = _discoverPodcasts.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
     private val _discoverTitle = kotlinx.coroutines.flow.MutableStateFlow("Top Podcasts")
@@ -75,7 +75,7 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
     
-    fun subscribeToSearchResult(result: com.example.podtrail.network.SearchResult) {
+    fun subscribeToSearchResult(result: com.stark.podtrail.network.SearchResult) {
          viewModelScope.launch {
              val feedUrl = result.feedUrl ?: result.collectionId?.let { id ->
                  searcher.lookup(id)?.feedUrl
@@ -120,7 +120,7 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setListened(e: com.example.podtrail.data.EpisodeListItem, listened: Boolean) {
+    fun setListened(e: com.stark.podtrail.data.EpisodeListItem, listened: Boolean) {
         viewModelScope.launch {
             repo.markEpisodeListened(e, listened)
             refreshUpNext()

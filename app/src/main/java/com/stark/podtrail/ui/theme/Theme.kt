@@ -1,4 +1,4 @@
-package com.example.podtrail.ui.theme
+package com.stark.podtrail.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -132,3 +132,4 @@ fun PodTrailTheme(
         content = content
     )
 }
+

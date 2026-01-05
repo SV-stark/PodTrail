@@ -1,4 +1,4 @@
-package com.example.podtrail.data
+package com.stark.podtrail.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -131,3 +131,4 @@ class SettingsRepository(private val context: Context) {
         }
     }
 }
+

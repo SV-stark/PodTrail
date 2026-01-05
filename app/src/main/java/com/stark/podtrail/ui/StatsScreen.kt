@@ -1,4 +1,4 @@
-package com.example.podtrail.ui
+package com.stark.podtrail.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,9 +14,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.material.icons.filled.Podcasts
-import com.example.podtrail.data.Episode
-import com.example.podtrail.data.EpisodeListItem
-import com.example.podtrail.EpisodeCard
+import com.stark.podtrail.data.Episode
+import com.stark.podtrail.data.EpisodeListItem
+import com.stark.podtrail.EpisodeCard
 
 private fun Episode.toListItem() = EpisodeListItem(
     id = id,
@@ -102,3 +102,4 @@ fun HistoryList(episodes: List<Episode>, vm: PodcastViewModel, onEpisodeClick: (
         }
     }
 }
+

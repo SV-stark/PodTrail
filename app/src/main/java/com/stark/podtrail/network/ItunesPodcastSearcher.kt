@@ -1,4 +1,4 @@
-package com.example.podtrail.network
+package com.stark.podtrail.network
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -101,3 +101,4 @@ class ItunesPodcastSearcher {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-package com.example.podtrail.ui
+package com.stark.podtrail.ui
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,9 +31,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.podtrail.data.AppSettings
-import com.example.podtrail.data.PodcastWithStats
-import com.example.podtrail.data.SettingsRepository
+import com.stark.podtrail.data.AppSettings
+import com.stark.podtrail.data.PodcastWithStats
+import com.stark.podtrail.data.SettingsRepository
 import kotlinx.coroutines.launch
 
 @Composable
@@ -339,7 +339,7 @@ fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
 
 
 @Composable
-fun BadgeCard(badge: com.example.podtrail.ui.Badge) {
+fun BadgeCard(badge: com.stark.podtrail.ui.Badge) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (badge.unlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)
@@ -377,3 +377,4 @@ private fun formatTimeListened(millis: Long): String {
     
     return if (days > 0) "${days}d ${hours}h" else "${hours}h ${minutes}m"
 }
+

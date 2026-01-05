@@ -1,4 +1,4 @@
-package com.example.podtrail.data
+package com.stark.podtrail.data
 
 data class EpisodeListItem(
     val id: Long,
@@ -13,3 +13,4 @@ data class EpisodeListItem(
     val playbackPosition: Long = 0,
     val lastPlayedTimestamp: Long = 0
 )
+

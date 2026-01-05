@@ -1,4 +1,4 @@
-package com.example.podtrail.ui
+package com.stark.podtrail.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -7,8 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import com.example.podtrail.data.Podcast
-import com.example.podtrail.data.Episode
+import com.stark.podtrail.data.Podcast
+import com.stark.podtrail.data.Episode
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
@@ -17,8 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.foundation.clickable
-import com.example.podtrail.PodcastCard
-import com.example.podtrail.data.PodcastWithStats
+import com.stark.podtrail.PodcastCard
+import com.stark.podtrail.data.PodcastWithStats
 
 @Composable
 fun HomeScreen(
@@ -37,7 +37,7 @@ fun HomeScreen(
     val onDeck = upNext.filter { it.playbackPosition == 0L }
 
     if (podcasts.isEmpty()) {
-        com.example.podtrail.ui.EmptyState(
+        com.stark.podtrail.ui.EmptyState(
              icon = Icons.Default.PlayArrow,
              title = "Your library is empty",
              message = "Subscribe to podcasts to see episodes here.",
@@ -169,3 +169,4 @@ private fun formatDate(millis: Long): String {
     val sdf = java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault())
     return sdf.format(java.util.Date(millis))
 }
+

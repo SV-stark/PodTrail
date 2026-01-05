@@ -1,4 +1,4 @@
-package com.example.podtrail.network
+package com.stark.podtrail.network
 
 import okhttp3.OkHttpClient
 import okhttp3.Request

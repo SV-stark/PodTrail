@@ -1,4 +1,4 @@
-package com.example.podtrail.ui
+package com.stark.podtrail.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.util.*
-import com.example.podtrail.data.EpisodeListItem
+import com.stark.podtrail.data.EpisodeListItem
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import coil.compose.AsyncImage
@@ -189,3 +189,4 @@ fun EpisodesListItemSmall(ep: EpisodeListItem, onClick: () -> Unit) {
 private fun formatTime(millis: Long): String {
     return java.text.SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(millis))
 }
+

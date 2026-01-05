@@ -1,4 +1,4 @@
-package com.example.podtrail.ui
+package com.stark.podtrail.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -47,3 +47,4 @@ fun EmptyState(
         }
     }
 }
+

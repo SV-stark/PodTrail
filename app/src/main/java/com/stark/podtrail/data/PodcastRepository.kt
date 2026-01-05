@@ -1,6 +1,6 @@
-package com.example.podtrail.data
+package com.stark.podtrail.data
 
-import com.example.podtrail.network.FeedParser
+import com.stark.podtrail.network.FeedParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
@@ -179,3 +179,4 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
     }
 }
+

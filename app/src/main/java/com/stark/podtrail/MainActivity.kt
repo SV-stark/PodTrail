@@ -1,4 +1,4 @@
-package com.example.podtrail
+package com.stark.podtrail
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,14 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.graphics.Brush
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.podtrail.data.Episode
-import com.example.podtrail.data.Podcast
+import com.stark.podtrail.data.Episode
+import com.stark.podtrail.data.Podcast
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
-import com.example.podtrail.ui.PodcastViewModel
-import com.example.podtrail.ui.ProfileScreen
-import com.example.podtrail.ui.theme.PodTrailTheme
+import com.stark.podtrail.ui.PodcastViewModel
+import com.stark.podtrail.ui.ProfileScreen
+import com.stark.podtrail.ui.theme.PodTrailTheme
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
@@ -91,21 +91,21 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     val context = LocalContext.current
-    val settingsRepo = remember { com.example.podtrail.data.SettingsRepository(context) }
-    val appSettings by settingsRepo.settings.collectAsState(initial = com.example.podtrail.data.AppSettings())
+    val settingsRepo = remember { com.stark.podtrail.data.SettingsRepository(context) }
+    val appSettings by settingsRepo.settings.collectAsState(initial = com.stark.podtrail.data.AppSettings())
 
     var showSearch by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
-    var selectedEpisode by remember { mutableStateOf<com.example.podtrail.data.EpisodeListItem?>(null) }
+    var selectedEpisode by remember { mutableStateOf<com.stark.podtrail.data.EpisodeListItem?>(null) }
     
     // 0 = Home, 1 = Discover, 2 = Profile
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    com.example.podtrail.ui.theme.PodTrailTheme(
+    com.stark.podtrail.ui.theme.PodTrailTheme(
         darkTheme = when(appSettings.themeMode) {
-            com.example.podtrail.data.ThemeMode.LIGHT -> false
-            com.example.podtrail.data.ThemeMode.DARK -> true
+            com.stark.podtrail.data.ThemeMode.LIGHT -> false
+            com.stark.podtrail.data.ThemeMode.DARK -> true
             else -> isSystemInDarkTheme()
         },
         dynamicColor = appSettings.useDynamicColor,
@@ -181,7 +181,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 if (showSettings) {
-                    com.example.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
+                    com.stark.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
                 } else if (selectedEpisode != null) {
                     // Fetch full episode details if we only have the item
                      val fullEpisodeState = produceState<Episode?>(initialValue = null, key1 = selectedEpisode!!.id) {
@@ -221,11 +221,11 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                 } else {
                     // Main Tabs
                     when (selectedTab) {
-                        0 -> com.example.podtrail.ui.HomeScreen(
+                        0 -> com.stark.podtrail.ui.HomeScreen(
                             vm, 
                             onOpenPodcast = { podcast -> selectedPodcast = podcast },
                             onOpenEpisode = { episode -> 
-                                selectedEpisode = com.example.podtrail.data.EpisodeListItem(
+                                selectedEpisode = com.stark.podtrail.data.EpisodeListItem(
                                     id = episode.id,
                                     podcastId = episode.podcastId,
                                     title = episode.title,
@@ -241,7 +241,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                             }
                         )
                         1 -> DiscoverScreen(vm)
-                        2 -> com.example.podtrail.ui.CalendarScreen(vm, onEpisodeClick = { ep -> selectedEpisode = ep })
+                        2 -> com.stark.podtrail.ui.CalendarScreen(vm, onEpisodeClick = { ep -> selectedEpisode = ep })
                         3 -> ProfileScreen(vm, settingsRepo, appSettings)
                     }
                 }
@@ -416,7 +416,7 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
 @Composable
 fun PodcastCard(
     podcast: Podcast, 
-    stats: com.example.podtrail.data.PodcastWithStats, 
+    stats: com.stark.podtrail.data.PodcastWithStats, 
     onClick: () -> Unit,
     onInfoClick: () -> Unit
 ) {
@@ -503,7 +503,7 @@ fun PodcastCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onDetails: (com.example.podtrail.data.EpisodeListItem) -> Unit) {
+fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onDetails: (com.stark.podtrail.data.EpisodeListItem) -> Unit) {
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOrder by vm.sortOrder.collectAsState()
 
@@ -532,7 +532,7 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EpisodeCard(ep: com.example.podtrail.data.EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
+fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             if (it == SwipeToDismissBoxValue.StartToEnd) {
@@ -726,7 +726,7 @@ fun DiscoverScreen(vm: PodcastViewModel) {
     val discoverPodcasts by vm.discoverPodcasts.collectAsState()
     val title by vm.discoverTitle.collectAsState()
     
-    var showPreviewPodcast by remember { mutableStateOf<com.example.podtrail.network.SearchResult?>(null) }
+    var showPreviewPodcast by remember { mutableStateOf<com.stark.podtrail.network.SearchResult?>(null) }
     
     LaunchedEffect(Unit) {
         vm.refreshDiscover()
