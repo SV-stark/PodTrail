@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.podtrail.data.Episode
 import com.example.podtrail.data.Podcast
 import com.example.podtrail.ui.PodcastViewModel
+import com.example.podtrail.ui.ProfileScreen
 import com.example.podtrail.ui.theme.PodTrailTheme
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
