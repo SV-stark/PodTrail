@@ -29,7 +29,7 @@ abstract class PodcastDatabase : RoomDatabase() {
         }
     }
 
-    }
+
 
     fun checkpoint() {
         if (!isOpen) return

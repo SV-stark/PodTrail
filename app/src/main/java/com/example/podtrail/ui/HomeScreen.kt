@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.foundation.clickable
 import com.example.podtrail.PodcastCard
-import com.example.podtrail.PodcastWithStats
+import com.example.podtrail.data.PodcastWithStats
 
 @Composable
 fun HomeScreen(
