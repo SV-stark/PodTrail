@@ -197,5 +197,12 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun refreshAllPodcasts() {
+        viewModelScope.launch {
+            repo.refreshAllPodcasts()
+            refreshUpNext()
+        }
+    }
+
 
 }

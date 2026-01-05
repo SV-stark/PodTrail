@@ -63,6 +63,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.List
 import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.DateRange
@@ -141,8 +142,8 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                         title = { Text("PodTrack", style = MaterialTheme.typography.headlineMedium) },
                         actions = {
                             IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
-                             // Stats hidden for now or moved to profile?
-                            IconButton(onClick = { }) { Icon(Icons.Default.Menu, contentDescription = "Menu") } // Hamburger placeholder
+                             // Refresh button to fetch new episodes
+                            IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh") } 
                             IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
                         },
                         colors = topAppBarColors
@@ -607,13 +608,13 @@ fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Uni
             IconButton(
                 onClick = onToggle,
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(24.dp)
                     .background(
                         color = if (ep.listened) MaterialTheme.colorScheme.primary else Color.Transparent,
                         shape = CircleShape
                     )
                     .border(
-                        width = 2.dp,
+                        width = 1.5.dp,
                         color = if (ep.listened) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         shape = CircleShape
                     )
@@ -622,7 +623,7 @@ fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Uni
                     imageVector = Icons.Default.Check, 
                     contentDescription = "Listened",
                     tint = if (ep.listened) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }

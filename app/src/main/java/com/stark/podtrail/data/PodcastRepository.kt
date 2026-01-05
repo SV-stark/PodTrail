@@ -58,6 +58,33 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
     }
 
+    suspend fun refreshAllPodcasts() = withContext(Dispatchers.IO) {
+        val podcasts = dao.getAllPodcasts().first().map { it.podcast }
+        podcasts.forEach { podcast ->
+            try {
+                val (_, episodes) = parser.fetchFeed(podcast.feedUrl)
+                val eps = episodes.map {
+                     val safeDesc = it.description?.take(200)
+                     Episode(
+                        podcastId = podcast.id,
+                        title = it.title,
+                        guid = it.guid,
+                        pubDate = it.pubDateMillis,
+                        audioUrl = it.audioUrl,
+                        imageUrl = it.imageUrl ?: podcast.imageUrl,
+                        episodeNumber = it.episodeNumber,
+                        durationMillis = it.durationMillis,
+                        description = safeDesc
+                    )
+                }
+                dao.insertEpisodes(eps)
+            } catch (e: Exception) {
+                // Ignore failure for individual podcast refresh
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun episodesForPodcast(podcastId: Long, sortOption: com.stark.podtrail.ui.SortOption = com.stark.podtrail.ui.SortOption.DATE_NEWEST) = 
         when (sortOption) {
             com.stark.podtrail.ui.SortOption.DATE_NEWEST -> dao.getEpisodesForPodcastLite(podcastId)
