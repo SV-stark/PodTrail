@@ -175,17 +175,17 @@ fun SettingsScreen(
 
             item {
                  val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                    androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/x-sqlite3")
+                    androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
                 ) { uri ->
                     if (uri != null) {
                         scope.launch { repo.exportDatabase(uri) }
                     }
                 }
                 ClickablePreference(
-                    title = "Export Database",
-                    subtitle = "Backup your data to a file",
+                    title = "Export Backup (JSON)",
+                    subtitle = "Backup your data to a JSON file",
                     icon = Icons.Default.Upload,
-                    onClick = { exportLauncher.launch("backup.db") }
+                    onClick = { exportLauncher.launch("podtrail_backup.json") }
                 )
             }
 
@@ -196,6 +196,8 @@ fun SettingsScreen(
                     if (uri != null) {
                         scope.launch {
                             if (repo.importDatabase(uri)) {
+                                // For full restore, it's often safer to restart to ensure all in-memory caches (like ViewModels) are cleared.
+                                // Although Flows should update, global state or non-reactive components might be stale.
                                 val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                                 intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
                                 context.startActivity(intent)
@@ -205,10 +207,10 @@ fun SettingsScreen(
                     }
                 }
                 ClickablePreference(
-                    title = "Import Database",
+                    title = "Import Backup (JSON)",
                     subtitle = "Restore data (Overwrites current!)",
                     icon = Icons.Default.Download,
-                    onClick = { importLauncher.launch("*/*") }
+                    onClick = { importLauncher.launch("application/json") }
                 )
             }
 

@@ -86,4 +86,18 @@ interface PodcastDao {
 
     @Query("SELECT lastPlayedTimestamp FROM episodes WHERE lastPlayedTimestamp > 0 ORDER BY lastPlayedTimestamp DESC")
     fun getAllLastPlayedTimestamps(): Flow<List<Long>>
+
+    // --- Bulk Export/Import ---
+
+    @Query("SELECT * FROM podcasts")
+    suspend fun getAllPodcastsSync(): List<Podcast>
+
+    @Query("SELECT * FROM episodes")
+    suspend fun getAllEpisodesSync(): List<Episode>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPodcasts(podcasts: List<Podcast>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllEpisodes(episodes: List<Episode>)
 }

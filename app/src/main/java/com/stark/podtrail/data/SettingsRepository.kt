@@ -78,24 +78,39 @@ class SettingsRepository(private val context: Context) {
     suspend fun importDatabase(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                // 1. Close the database
-                PodcastDatabase.destroyInstance()
-                
-                // 2. Delete existing database files to prevent stale WAL/locking issues
-            getDatabasePath().delete()
-            java.io.File(getDatabasePath().path + "-wal").delete()
-            java.io.File(getDatabasePath().path + "-shm").delete()
+                val jsonString = context.contentResolver.openInputStream(uri)?.bufferedReader().use { it?.readText() }
+                if (jsonString == null) return@withContext false
 
-                // 3. Copy the new database
-                val dbFile = getDatabasePath()
-                // deleteDatabase should handle this, but ensure parent dir exists
-                dbFile.parentFile?.mkdirs()
+                val gson = com.google.gson.Gson()
+                val backupData = gson.fromJson(jsonString, BackupData::class.java)
+
+                // Restore
+                val db = PodcastDatabase.getInstance(context)
+                val dao = db.podcastDao()
                 
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    dbFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
+                db.runInTransaction {
+                    // We need to run this in a transaction block
+                    // However, runInTransaction is blocking, so we launch a couroutine inside? 
+                    // No, room's runInTransaction takes a Runnable.
+                    // Accessing suspend functions inside runInTransaction can be tricky if they are suspend.
+                    // Fortunately, Room's dao methods can be blocking if not suspend, OR we can just do individual calls if we accept non-atomicity, OR we use withTransaction helper.
+                    // But here we're inside a suspend function already.
+                    // Let's use Room's withTransaction.
                 }
+                
+                // Simpler approach: call DAOs directly. Since we are in suspend function.
+                // To ensure atomicity:
+                androidx.room.withTransaction(db) {
+                    dao.deleteAllEpisodes()
+                    dao.deleteAllPodcasts()
+                    dao.insertPodcasts(backupData.podcasts)
+                    dao.insertAllEpisodes(backupData.episodes)
+                }
+
+                // Restart app to refresh data? Or just let flows update?
+                // The flows should update automatically. 
+                // But the original code restarted the app.
+                // Let's keep the restart logic in the UI if needed, but here we just return true.
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -107,22 +122,21 @@ class SettingsRepository(private val context: Context) {
     suspend fun exportDatabase(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                // 1. Checkpoint to flush WAL to main .db file
-                val dbInstance = PodcastDatabase.getInstance(context)
-                if (dbInstance.isOpen) {
-                    val db = dbInstance.openHelper.writableDatabase
-                    db.query("PRAGMA wal_checkpoint(FULL)").close()
-                    db.execSQL("VACUUM") // Ensure everything is compacted into the main file
-                }
-
-                val dbFile = getDatabasePath()
-                if (!dbFile.exists()) return@withContext false
+                val db = PodcastDatabase.getInstance(context)
+                val dao = db.podcastDao()
                 
-                context.contentResolver.openOutputStream(uri)?.use { output ->
-                    dbFile.inputStream().use { input ->
-                        input.copyTo(output)
-                    }
-                }
+                val podcasts = dao.getAllPodcastsSync()
+                val episodes = dao.getAllEpisodesSync()
+                
+                val backupData = BackupData(
+                    podcasts = podcasts,
+                    episodes = episodes
+                )
+                
+                val gson = com.google.gson.Gson()
+                val jsonString = gson.toJson(backupData)
+                
+                context.contentResolver.openOutputStream(uri)?.bufferedWriter().use { it?.write(jsonString) }
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
