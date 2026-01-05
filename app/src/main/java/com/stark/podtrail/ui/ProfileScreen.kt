@@ -154,7 +154,6 @@ fun ProfileScreen(
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showPodcastPicker = false }) { Text("Cancel") } }
         )
-        )
     }
 
     if (showNameEditDialog) {
