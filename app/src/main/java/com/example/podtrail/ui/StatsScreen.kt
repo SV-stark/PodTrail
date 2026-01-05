@@ -15,7 +15,20 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.compose.material.icons.filled.Podcasts
 import com.example.podtrail.data.Episode
-import com.example.podtrail.EpisodeRow
+import com.example.podtrail.data.EpisodeListItem
+import com.example.podtrail.EpisodeCard
+
+private fun Episode.toListItem() = EpisodeListItem(
+    id = id,
+    podcastId = podcastId,
+    title = title,
+    pubDate = pubDate,
+    imageUrl = imageUrl,
+    episodeNumber = episodeNumber,
+    durationMillis = durationMillis,
+    listened = listened,
+    listenedAt = listenedAt
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,10 +64,12 @@ fun UpNextList(episodes: List<Episode>, vm: PodcastViewModel, onEpisodeClick: (E
             Text("No episodes up next. Subscribe to podcasts or check for new episodes!")
         }
     } else {
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             items(episodes) { ep ->
-                EpisodeRow(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onEpisodeClick(ep) })
-                HorizontalDivider()
+                EpisodeCard(ep.toListItem(), onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onEpisodeClick(ep) })
             }
         }
     }
@@ -67,19 +82,21 @@ fun HistoryList(episodes: List<Episode>, vm: PodcastViewModel, onEpisodeClick: (
             Text("No history yet.")
         }
     } else {
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             items(episodes) { ep ->
                 Column {
-                    EpisodeRow(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onEpisodeClick(ep) })
+                    EpisodeCard(ep.toListItem(), onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onEpisodeClick(ep) })
                     if (ep.listenedAt != null && ep.listenedAt > 0) {
                          Text(
                              text = "Listened on: ${java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.listenedAt))}",
                              style = MaterialTheme.typography.bodySmall,
-                             modifier = Modifier.padding(start = 72.dp, bottom = 8.dp),
+                             modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 8.dp),
                              color = MaterialTheme.colorScheme.onSurfaceVariant
                          )
                     }
-                    HorizontalDivider()
                 }
             }
         }
