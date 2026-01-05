@@ -57,7 +57,7 @@ class PodcastRepository(private val dao: PodcastDao) {
     fun episodesForPodcast(podcastId: Long, isAsc: Boolean = false) = 
         if (isAsc) dao.getEpisodesForPodcastLiteAsc(podcastId) else dao.getEpisodesForPodcastLite(podcastId)
 
-    suspend fun getEpisode(id: Long) = dao.getEpisode(id)
+    suspend fun getEpisode(id: Long) = dao.getEpisodeById(id)
 
     fun getHistory() = dao.getHistory()
     
@@ -75,7 +75,7 @@ class PodcastRepository(private val dao: PodcastDao) {
     }
 
     suspend fun markEpisodeListened(episode: EpisodeListItem, listened: Boolean) {
-        val fullEpisode = dao.getEpisode(episode.id) ?: return
+        val fullEpisode = dao.getEpisodeById(episode.id) ?: return
         dao.updateEpisode(fullEpisode.copy(
             listened = listened,
             listenedAt = if (listened) System.currentTimeMillis() else null
