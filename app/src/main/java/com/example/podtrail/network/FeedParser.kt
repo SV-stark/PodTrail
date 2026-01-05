@@ -172,7 +172,7 @@ class FeedParser {
 
     private fun xmlPullParser(xml: String): XmlPullParser {
         val factory = XmlPullParserFactory.newInstance()
-        factory.isNamespaceAware = true
+        factory.isNamespaceAware = false
         val parser = factory.newPullParser()
         parser.setInput(StringReader(xml))
         return parser

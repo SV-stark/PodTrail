@@ -13,15 +13,14 @@ data class SearchResponse(
     val results: List<SearchResult>
 )
 
-data class SearchResult(
-    val collectionName: String?,
-    val feedUrl: String?,
-    val artworkUrl600: String?,
-    val artworkUrl100: String?,
-    val artistName: String?,
-    val collectionId: Long?,
-    val primaryGenreName: String? = null,
-    val primaryGenreId: Long? = null
+    @SerializedName("collectionName") val collectionName: String?,
+    @SerializedName("feedUrl") val feedUrl: String?,
+    @SerializedName("artworkUrl600") val artworkUrl600: String?,
+    @SerializedName("artworkUrl100") val artworkUrl100: String?,
+    @SerializedName("artistName") val artistName: String?,
+    @SerializedName("collectionId") val collectionId: Long?,
+    @SerializedName("primaryGenreName") val primaryGenreName: String? = null,
+    @SerializedName("primaryGenreId") val primaryGenreId: Long? = null
 )
 
 // RSS Feed Data Models
