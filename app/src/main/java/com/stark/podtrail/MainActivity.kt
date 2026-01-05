@@ -62,6 +62,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.List
 import androidx.compose.ui.draw.shadow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.DateRange
@@ -636,7 +637,7 @@ private fun formatMillis(ms: Long): String {
     return if (hh > 0) String.format("%d:%02d:%02d", hh, mm, ss) else String.format("%02d:%02d", mm, ss)
 }
 
-@Composable
+
 @Composable
 fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
