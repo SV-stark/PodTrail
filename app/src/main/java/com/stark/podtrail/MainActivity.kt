@@ -61,7 +61,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.DateRange
@@ -186,31 +186,16 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                 if (showSettings) {
                     com.stark.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
                 } else if (selectedEpisode != null) {
-                    // Fetch full episode details if we only have the item
-                     val fullEpisodeState = produceState<Episode?>(initialValue = null, key1 = selectedEpisode!!.id) {
-                         value = vm.getEpisode(selectedEpisode!!.id)
-                         // Trigger real-time fetch to ensure description is up to date/full
-                         if (value != null) {
-                             vm.fetchAndUpdateDescription(value!!.id)
-                         }
-                     }
-                     // Also watch for updates to the episode in case the fetch finishes while we are looking at it
-                     val updatedEpisode by vm.episodesFor(selectedEpisode!!.podcastId).collectAsState(initial = emptyList())
-                     // This flow is for the list, so it might be lightweight.
-                     // Better: The produceState above runs once. We need a way to Observe changes to the single episode.
-                     // Since we don't have a flow for single episode, we will just rely on the UI re-reading if we close/open? 
-                     // OR we can make a Flow for getEpisode(id). 
-                     // For now, let's keep it simple: The fetch runs in background. 
-                     // If the user really wants to see it "real time", we should observe it.
-                     // But the user said "loaded from api in real time".
-                     // Let's change `fullEpisodeState` to use a Flow if possible or poll?
-                     // Actually, if we update the DB, the Flow<List> updates.
-                     // But we are in Details view.
+                     // Fetch full episode details using a Flow to observe changes (like mark listened)
+                     val fullEpisode by vm.getEpisodeFlow(selectedEpisode!!.id).collectAsState(initial = null)
                      
-                     if (fullEpisodeState.value != null) {
-                         // We display the loaded value. If background fetch updates DB, this state won't update unless we observe DB.
-                         // Let's display what we have.
-                        EpisodeDetailScreen(episode = fullEpisodeState.value!!, vm = vm, onClose = { selectedEpisode = null })
+                     // Trigger update description once when we open
+                     LaunchedEffect(selectedEpisode!!.id) {
+                         vm.fetchAndUpdateDescription(selectedEpisode!!.id)
+                     }
+                     
+                     if (fullEpisode != null) {
+                        EpisodeDetailScreen(episode = fullEpisode!!, vm = vm, onClose = { selectedEpisode = null })
                      } else {
                          Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                      }
@@ -621,7 +606,7 @@ fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Uni
             IconButton(
                 onClick = onToggle,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(32.dp)
                     .background(
                         color = if (ep.listened) MaterialTheme.colorScheme.primary else Color.Transparent,
                         shape = CircleShape
@@ -632,19 +617,12 @@ fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Uni
                         shape = CircleShape
                     )
             ) {
-                if (ep.listened) {
-                    Icon(
-                        imageVector = Icons.Default.Check, 
-                        contentDescription = "Listened",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                } 
-                // If not listened, show nothing inside (just border).
-                // "Check" icon that becomes filled. 
-                // Suggests "Tap to Mark Done".
-                // It suggests "Tap to Mark Done".
-                // If unchecked, it usually is an empty circle.
-                // I'll leave it empty if unchecked.
+                Icon(
+                    imageVector = Icons.Default.Check, 
+                    contentDescription = "Listened",
+                    tint = if (ep.listened) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }
@@ -659,58 +637,92 @@ private fun formatMillis(ms: Long): String {
 }
 
 @Composable
+@Composable
 fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> Unit) {
-    Box(Modifier.fillMaxSize()) {
-        // Backdrop
-        AsyncImage(
-             model = episode.imageUrl,
-             contentDescription = null,
-             modifier = Modifier.fillMaxSize(),
-             contentScale = ContentScale.Crop,
-             alpha = 0.3f
-        )
-        Box(Modifier.fillMaxSize().background(
-            Brush.verticalGradient(
-                colors = listOf(MaterialTheme.colorScheme.background.copy(alpha=0.8f), MaterialTheme.colorScheme.background)
+    Column(Modifier.fillMaxSize()) {
+        // Top Section: Image and Backdrop (~35% of screen)
+        Box(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .weight(0.35f)
+        ) {
+            // Blurred/Dimmed Backdrop
+            AsyncImage(
+                 model = episode.imageUrl,
+                 contentDescription = null,
+                 modifier = Modifier.fillMaxSize(),
+                 contentScale = ContentScale.Crop,
+                 alpha = 0.4f
             )
-        ))
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha=0.3f)))
+            
+            // Back Button
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .align(Alignment.TopStart)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
+            ) { 
+                Icon(Icons.Default.ArrowBack, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurface) 
+            }
 
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            // Central Image
+            AsyncImage(
+                model = episode.imageUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxHeight(0.85f) // maximize height within the 35% box
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .shadow(8.dp),
+                contentScale = ContentScale.Crop,
+                error = rememberVectorPainter(Icons.Default.Podcasts),
+                placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+            )
+        }
+
+        // Bottom Section: Details and Description (~65% of screen)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.65f)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(16.dp)
+        ) {
+            // Fixed Title and Metadata
+            Text(episode.title, style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Close") }
-                Text("Episode Details", style = MaterialTheme.typography.titleLarge)
+                if (episode.episodeNumber != null) {
+                    Text("Ep ${episode.episodeNumber}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("•", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.width(8.dp))
+                }
+                if (episode.pubDate > 0) {
+                     Text(java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(episode.pubDate)), style = MaterialTheme.typography.labelMedium)
+                     Spacer(Modifier.width(8.dp))
+                     Text("•", style = MaterialTheme.typography.labelMedium)
+                     Spacer(Modifier.width(8.dp))
+                }
+                if (episode.durationMillis != null) {
+                    Text(formatMillis(episode.durationMillis), style = MaterialTheme.typography.labelMedium)
+                }
             }
             
             Spacer(Modifier.height(16.dp))
-            
-            Column(
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                AsyncImage(
-                    model = episode.imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier.size(240.dp).clip(RoundedCornerShape(16.dp)),
-                    contentScale = ContentScale.Crop,
-                    error = rememberVectorPainter(Icons.Default.Podcasts),
-                    placeholder = rememberVectorPainter(Icons.Default.Podcasts)
-                )
-                Spacer(Modifier.height(24.dp))
-                Text(episode.title, style = MaterialTheme.typography.headlineMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Spacer(Modifier.height(8.dp))
-                if (episode.episodeNumber != null) {
-                    Text("Episode ${episode.episodeNumber}", style = MaterialTheme.typography.titleMedium)
-                }
-                if (episode.durationMillis != null) {
-                    Text("Duration: ${formatMillis(episode.durationMillis)}", style = MaterialTheme.typography.bodyMedium)
-                }
-                if (episode.pubDate > 0) {
-                     Text("Published: ${java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(episode.pubDate))}", style = MaterialTheme.typography.bodyMedium)
-                }
-                Spacer(Modifier.height(16.dp))
-                // Description might be HTML, but focusing on plain text or simple display. 
-                // For now, simple text display. Ideally use AndroidView for WebView or Html.fromHtml.
+            HorizontalDivider()
+            Spacer(Modifier.height(16.dp))
+
+             // Scrollable Description Area
+             Column(
+                 modifier = Modifier
+                     .weight(1f)
+                     .verticalScroll(rememberScrollState())
+             ) {
                 if (!episode.description.isNullOrBlank()) {
                     val decodedDescription = try {
                         android.text.Html.fromHtml(episode.description, android.text.Html.FROM_HTML_MODE_COMPACT).toString()
@@ -718,21 +730,22 @@ fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> U
                     
                     Text(
                         text = decodedDescription, 
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.verticalScroll(rememberScrollState())
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
+                } else {
+                    Text("No description available.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
-            
-            Spacer(Modifier.height(16.dp))
-            
-            Button(
+             }
+
+             Spacer(Modifier.height(16.dp))
+             
+             Button(
                 onClick = { vm.setListened(episode, !episode.listened) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                 Text(if (episode.listened) "Mark Unlistened" else "Mark Listened")
+                 Text(if (episode.listened) "Remove Listened" else "Mark Listened")
             }
-            Spacer(Modifier.height(16.dp))
         }
     }
 }

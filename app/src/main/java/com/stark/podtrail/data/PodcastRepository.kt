@@ -38,7 +38,7 @@ class PodcastRepository(private val dao: PodcastDao) {
             if (podcastId <= 0) return@withContext Result.failure<Long>(Exception("Failed to insert podcast"))
 
             val eps = episodes.map {
-                val safeDesc = it.description?.take(1000) // Truncate to 1000 chars for DB optimization
+                val safeDesc = it.description?.take(200) // Store only a snippet initially to save space
                 Episode(
                     podcastId = podcastId,
                     title = it.title,
@@ -67,6 +67,8 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
 
     suspend fun getEpisode(id: Long) = dao.getEpisodeById(id)
+    
+    fun getEpisodeFlow(id: Long) = dao.getEpisodeByIdFlow(id)
 
     fun getHistory() = dao.getHistory()
     

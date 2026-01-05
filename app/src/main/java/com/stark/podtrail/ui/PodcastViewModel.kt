@@ -106,6 +106,8 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     suspend fun getEpisode(id: Long) = repo.getEpisode(id)
+    
+    fun getEpisodeFlow(id: Long) = repo.getEpisodeFlow(id)
 
     fun fetchAndUpdateDescription(episodeId: Long) {
         viewModelScope.launch {

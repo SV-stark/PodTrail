@@ -54,6 +54,9 @@ interface PodcastDao {
     @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
     suspend fun getEpisodeById(episodeId: Long): Episode?
 
+    @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
+    fun getEpisodeByIdFlow(episodeId: Long): kotlinx.coroutines.flow.Flow<Episode?>
+
     @Update
     suspend fun updateEpisode(episode: Episode)
 
