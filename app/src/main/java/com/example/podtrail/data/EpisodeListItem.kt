@@ -1,0 +1,13 @@
+package com.example.podtrail.data
+
+data class EpisodeListItem(
+    val id: Long,
+    val podcastId: Long,
+    val title: String,
+    val pubDate: Long,
+    val imageUrl: String?,
+    val episodeNumber: Int?,
+    val durationMillis: Long?,
+    val listened: Boolean,
+    val listenedAt: Long?
+)

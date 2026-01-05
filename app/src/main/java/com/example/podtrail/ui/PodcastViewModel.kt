@@ -32,6 +32,46 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     private val _searchResults = kotlinx.coroutines.flow.MutableStateFlow<List<com.example.podtrail.network.SearchResult>>(emptyList())
     val searchResults = _searchResults.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    private val _discoverPodcasts = kotlinx.coroutines.flow.MutableStateFlow<List<com.example.podtrail.network.SearchResult>>(emptyList())
+    val discoverPodcasts = _discoverPodcasts.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    
+    private val _discoverTitle = kotlinx.coroutines.flow.MutableStateFlow("Top Podcasts")
+    val discoverTitle = _discoverTitle.stateIn(viewModelScope, SharingStarted.Lazily, "Top Podcasts")
+
+    fun refreshDiscover() {
+        viewModelScope.launch {
+            // Logic: Pick a random podcast from user's library, find its genre, and get top charts for that genre.
+            // If empty, get generic top podcasts.
+            val localPodcasts = repo.allPodcastsDirect()
+            if (localPodcasts.isNotEmpty()) {
+                val randomPod = localPodcasts.random()
+                // Lookup genre
+                val details = searcher.search(randomPod.title).firstOrNull() 
+                if (details?.primaryGenreId != null) {
+                    _discoverTitle.value = "Top in ${details.primaryGenreName ?: "suggested"}"
+                    _discoverPodcasts.value = searcher.getTopPodcasts(genreId = details.primaryGenreId)
+                    return@launch
+                }
+            }
+            
+            // Fallback
+            _discoverTitle.value = "Top Podcasts"
+            _discoverPodcasts.value = searcher.getTopPodcasts()
+        }
+    }
+    
+    fun subscribeToSearchResult(result: com.example.podtrail.network.SearchResult) {
+         viewModelScope.launch {
+             val feedUrl = result.feedUrl ?: result.collectionId?.let { id ->
+                 searcher.lookup(id)?.feedUrl
+             }
+             
+             if (feedUrl != null) {
+                 repo.addPodcast(feedUrl)
+             }
+         }
+    }
+
     fun search(query: String) {
         viewModelScope.launch {
             _searchResults.value = searcher.search(query)
@@ -50,6 +90,16 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         repo.episodesForPodcast(podcastId, isAsc)
     }
 
+    suspend fun getEpisode(id: Long) = repo.getEpisode(id)
+
+    fun setListened(e: com.example.podtrail.data.EpisodeListItem, listened: Boolean) {
+        viewModelScope.launch {
+            repo.markEpisodeListened(e, listened)
+            refreshUpNext()
+        }
+    }
+    
+    // overload for full object
     fun setListened(e: Episode, listened: Boolean) {
         viewModelScope.launch {
             repo.markEpisodeListened(e, listened)

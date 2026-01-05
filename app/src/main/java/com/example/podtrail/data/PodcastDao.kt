@@ -27,11 +27,17 @@ interface PodcastDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertEpisodes(episodes: List<Episode>)
 
-    @Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
-    fun getEpisodesForPodcast(podcastId: Long): Flow<List<Episode>>
+    @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    fun getEpisodesForPodcast(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
+
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    fun getEpisodesForPodcastLite(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
     fun getEpisodesForPodcastAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
+    
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    fun getEpisodesForPodcastLiteAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
     fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>

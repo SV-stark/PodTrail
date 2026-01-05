@@ -10,6 +10,8 @@ class PodcastRepository(private val dao: PodcastDao) {
 
 
     fun allPodcasts() = dao.getAllPodcasts()
+    
+    suspend fun allPodcastsDirect() = dao.getAllPodcasts().first().map { it.podcast }
 
     suspend fun addPodcast(feedUrl: String): Result<Long> = withContext(Dispatchers.IO) {
         try {
@@ -32,6 +34,7 @@ class PodcastRepository(private val dao: PodcastDao) {
             if (podcastId <= 0) return@withContext Result.failure<Long>(Exception("Failed to insert podcast"))
 
             val eps = episodes.map {
+                val safeDesc = it.description?.take(1000) // Truncate to 1000 chars for DB optimization
                 Episode(
                     podcastId = podcastId,
                     title = it.title,
@@ -41,7 +44,7 @@ class PodcastRepository(private val dao: PodcastDao) {
                     imageUrl = it.imageUrl ?: podcastImage, // fallback to podcast image if episode image missing
                     episodeNumber = it.episodeNumber,
                     durationMillis = it.durationMillis,
-                    description = it.description
+                    description = safeDesc
                 )
             }
             dao.insertEpisodes(eps) // IGNORE on conflict
@@ -52,7 +55,9 @@ class PodcastRepository(private val dao: PodcastDao) {
     }
 
     fun episodesForPodcast(podcastId: Long, isAsc: Boolean = false) = 
-        if (isAsc) dao.getEpisodesForPodcastAsc(podcastId) else dao.getEpisodesForPodcast(podcastId)
+        if (isAsc) dao.getEpisodesForPodcastLiteAsc(podcastId) else dao.getEpisodesForPodcastLite(podcastId)
+
+    suspend fun getEpisode(id: Long) = dao.getEpisode(id)
 
     fun getHistory() = dao.getHistory()
     
@@ -69,6 +74,15 @@ class PodcastRepository(private val dao: PodcastDao) {
         upNextList
     }
 
+    suspend fun markEpisodeListened(episode: EpisodeListItem, listened: Boolean) {
+        val fullEpisode = dao.getEpisode(episode.id) ?: return
+        dao.updateEpisode(fullEpisode.copy(
+            listened = listened,
+            listenedAt = if (listened) System.currentTimeMillis() else null
+        ))
+    }
+    
+    // overload for full episode object if needed
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
         dao.updateEpisode(episode.copy(
             listened = listened,

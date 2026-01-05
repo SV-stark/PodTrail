@@ -16,6 +16,10 @@ import com.example.podtrail.data.Episode
 import com.example.podtrail.data.Podcast
 import com.example.podtrail.ui.PodcastViewModel
 import com.example.podtrail.ui.theme.PodTrailTheme
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.res.painterResource
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -75,7 +79,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     var showSearch by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
-    var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
+    var selectedEpisode by remember { mutableStateOf<com.example.podtrail.data.EpisodeListItem?>(null) }
     
     // 0 = Home, 1 = Discover, 2 = Profile
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -96,6 +100,17 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
         )
+
+        // Handle Back Press
+        androidx.activity.compose.BackHandler(enabled = true) {
+            when {
+                showSettings -> showSettings = false
+                selectedEpisode != null -> selectedEpisode = null
+                showSearch -> showSearch = false
+                selectedPodcast != null -> selectedPodcast = null
+                else -> context.findActivity()?.finish()
+            }
+        }
 
         Scaffold(
             topBar = {
@@ -144,7 +159,16 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                 if (showSettings) {
                     com.example.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
                 } else if (selectedEpisode != null) {
-                    EpisodeDetailScreen(episode = selectedEpisode!!, vm = vm, onClose = { selectedEpisode = null })
+                    // Fetch full episode details if we only have the item
+                     val fullEpisodeState = produceState<Episode?>(initialValue = null, key1 = selectedEpisode!!.id) {
+                         value = vm.getEpisode(selectedEpisode!!.id)
+                     }
+                     
+                     if (fullEpisodeState.value != null) {
+                        EpisodeDetailScreen(episode = fullEpisodeState.value!!, vm = vm, onClose = { selectedEpisode = null })
+                     } else {
+                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                     }
                 } else if (showSearch) {
                     SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
                 } else if (selectedPodcast != null) {
@@ -156,7 +180,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                     // Main Tabs
                     when (selectedTab) {
                         0 -> PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
-                        1 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Discover Coming Soon") }
+                        1 -> DiscoverScreen(vm)
                         2 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Profile Coming Soon") }
                     }
                 }
@@ -384,7 +408,7 @@ fun PodcastCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onDetails: (Episode) -> Unit) {
+fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onDetails: (com.example.podtrail.data.EpisodeListItem) -> Unit) {
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOrder by vm.sortOrder.collectAsState()
 
@@ -400,38 +424,69 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
                 }
             }
         )
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             items(episodes) { ep ->
-                EpisodeRow(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onDetails(ep) })
-                HorizontalDivider()
+                EpisodeCard(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onDetails(ep) })
             }
         }
     }
 }
 
 @Composable
-fun EpisodeRow(ep: Episode, onToggle: () -> Unit, onDetails: () -> Unit) {
-    Row(Modifier
-        .fillMaxWidth()
-        .padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        
-        AsyncImage(
-            model = ep.imageUrl,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp).padding(end = 8.dp),
-            contentScale = ContentScale.Crop,
-            error = rememberVectorPainter(Icons.Default.Podcasts),
-            placeholder = rememberVectorPainter(Icons.Default.Podcasts)
-        )
-        
-        Column(Modifier.weight(1f).clickable { onDetails() }) {
-            Text(ep.title, style = MaterialTheme.typography.bodyLarge)
-            if (ep.pubDate > 0) Text(java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.pubDate)), style = MaterialTheme.typography.bodySmall)
-            if (ep.episodeNumber != null) Text("Episode ${ep.episodeNumber}", style = MaterialTheme.typography.bodySmall)
-            if (ep.durationMillis != null) Text("Duration ${formatMillis(ep.durationMillis)}", style = MaterialTheme.typography.bodySmall)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Checkbox(checked = ep.listened, onCheckedChange = { onToggle() })
+fun EpisodeCard(ep: com.example.podtrail.data.EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
+    Card(
+        onClick = onDetails,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = ep.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).padding(end = 8.dp),
+                contentScale = ContentScale.Crop,
+                error = rememberVectorPainter(Icons.Default.Podcasts),
+                placeholder = rememberVectorPainter(Icons.Default.Podcasts)
+            )
+            
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = ep.title, 
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(4.dp))
+                if (ep.pubDate > 0) {
+                    Text(
+                        text = java.text.SimpleDateFormat.getDateInstance().format(java.util.Date(ep.pubDate)), 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (ep.durationMillis != null) {
+                    Text(
+                        text = "Duration: ${formatMillis(ep.durationMillis)}", 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            Spacer(Modifier.width(8.dp))
+            
+            Column(horizontalAlignment = Alignment.End) {
+                Checkbox(checked = ep.listened, onCheckedChange = { onToggle() })
+            }
         }
     }
 }
@@ -505,4 +560,99 @@ fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> U
         }
         Spacer(Modifier.height(16.dp))
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DiscoverScreen(vm: PodcastViewModel) {
+    val discoverPodcasts by vm.discoverPodcasts.collectAsState()
+    val title by vm.discoverTitle.collectAsState()
+    
+    var showPreviewPodcast by remember { mutableStateOf<com.example.podtrail.network.SearchResult?>(null) }
+    
+    LaunchedEffect(Unit) {
+        vm.refreshDiscover()
+    }
+
+    if (showPreviewPodcast != null) {
+        val p = showPreviewPodcast!!
+        AlertDialog(
+            onDismissRequest = { showPreviewPodcast = null },
+            title = { Text(p.collectionName ?: "Podcast") },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    AsyncImage(
+                        model = p.artworkUrl600 ?: p.artworkUrl100,
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp).clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop,
+                        placeholder = rememberVectorPainter(Icons.Default.Podcasts),
+                        error = rememberVectorPainter(Icons.Default.Podcasts)
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(p.artistName ?: "", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
+                    Spacer(Modifier.height(16.dp))
+                    Text("Genre: ${p.primaryGenreName ?: "Unknown"}", style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    vm.subscribeToSearchResult(p)
+                    showPreviewPodcast = null
+                }) { Text("Subscribe") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPreviewPodcast = null }) { Text("Close") }
+            }
+        )
+    }
+
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
+        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 16.dp))
+        
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(discoverPodcasts) { podcast ->
+                Card(
+                     onClick = { showPreviewPodcast = podcast },
+                     shape = RoundedCornerShape(12.dp),
+                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column {
+                        AsyncImage(
+                            model = podcast.artworkUrl600 ?: podcast.artworkUrl100,
+                            contentDescription = null,
+                            modifier = Modifier.aspectRatio(1f),
+                            contentScale = ContentScale.Crop,
+                            placeholder = rememberVectorPainter(Icons.Default.Podcasts),
+                            error = rememberVectorPainter(Icons.Default.Podcasts)
+                        )
+                        Box(Modifier.padding(12.dp)) {
+                            Text(
+                                text = podcast.collectionName ?: "Unknown",
+                                style = MaterialTheme.typography.titleSmall,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun android.content.Context.findActivity(): android.app.Activity? {
+    var context = this
+    while (context is android.content.ContextWrapper) {
+        if (context is android.app.Activity) return context
+        context = context.baseContext
+    }
+    return null
 }
