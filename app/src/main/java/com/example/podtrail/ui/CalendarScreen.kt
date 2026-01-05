@@ -17,7 +17,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.util.*
 import com.example.podtrail.data.EpisodeListItem
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import coil.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -33,7 +37,7 @@ fun CalendarScreen(vm: PodcastViewModel, onEpisodeClick: (EpisodeListItem) -> Un
     // Better: VM provides "Episodes for Month X".
     
     var currentMonth by remember { mutableStateOf(Calendar.getInstance()) }
-    val episodes by vm.allEpisodesLite.collectAsStateWithLifecycle(initialValue = emptyList())
+    val episodes by vm.allEpisodesLite.collectAsState(initial = emptyList())
     
     val episodesByDay = remember(episodes, currentMonth) {
         episodes.groupBy { ep ->
@@ -148,7 +152,7 @@ fun CalendarScreen(vm: PodcastViewModel, onEpisodeClick: (EpisodeListItem) -> Un
                 LazyColumn(contentPadding = PaddingValues(16.dp)) {
                     item { Text("Releases on ${java.text.SimpleDateFormat("MMM", Locale.getDefault()).format(currentMonth.time)} $selectedDay", style = MaterialTheme.typography.titleMedium) }
                     items(daysEpisodes) { ep ->
-                        com.example.podtrail.EpisodesListItemSmall(ep, onClick = { onEpisodeClick(ep) })
+                        EpisodesListItemSmall(ep, onClick = { onEpisodeClick(ep) })
                     }
                 }
             }
@@ -168,7 +172,7 @@ private fun isToday(cal: Calendar, day: Int): Boolean {
 }
 
 @Composable
-fun com.example.podtrail.EpisodesListItemSmall(ep: EpisodeListItem, onClick: () -> Unit) {
+fun EpisodesListItemSmall(ep: EpisodeListItem, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(ep.title, maxLines = 1) },
         supportingContent = { Text(formatTime(ep.pubDate)) },
@@ -176,7 +180,7 @@ fun com.example.podtrail.EpisodesListItemSmall(ep: EpisodeListItem, onClick: () 
              coil.compose.AsyncImage(
                 model = ep.imageUrl,
                 contentDescription = null,
-                modifier = Modifier.size(40.dp).androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp))
             )
         },
         modifier = Modifier.clickable(onClick = onClick)

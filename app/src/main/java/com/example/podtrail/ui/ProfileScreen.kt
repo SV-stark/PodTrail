@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -336,8 +335,7 @@ fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
         }
     }
 }
-    }
-}
+
 
 @Composable
 fun BadgeCard(badge: com.example.podtrail.ui.Badge) {
