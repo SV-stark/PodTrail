@@ -213,46 +213,80 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
 fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val results by vm.searchResults.collectAsState()
+    var showUrlDialog by remember { mutableStateOf(false) }
     var directUrl by remember { mutableStateOf("") }
 
+    if (showUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { showUrlDialog = false },
+            title = { Text("Add by URL") },
+            text = {
+                OutlinedTextField(
+                    value = directUrl,
+                    onValueChange = { directUrl = it },
+                    label = { Text("Feed URL") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (directUrl.isNotBlank()) {
+                        vm.addPodcast(directUrl, null) { }
+                        onPodcastAdded()
+                        showUrlDialog = false
+                    }
+                }) { Text("Add") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUrlDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
-            Text("Add Podcast", style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.width(8.dp))
+            Text("Add podcast", style = MaterialTheme.typography.titleLarge)
         }
         
-        Spacer(Modifier.height(16.dp))
-        
         // Search Bar
-        OutlinedTextField(
+        TextField(
             value = query,
             onValueChange = { 
                 query = it
                 vm.search(it)
             },
-            label = { Text("Search Podcasts") },
+            placeholder = { Text("Search podcast...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+            ),
             singleLine = true
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Direct URL Input (Fallback)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = directUrl,
-                onValueChange = { directUrl = it },
-                label = { Text("Or enter Feed URL directly") },
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
-            Spacer(Modifier.width(8.dp))
-            Button(onClick = {
-                if (directUrl.isNotBlank()) {
-                    vm.addPodcast(directUrl, null) { }
-                    onPodcastAdded()
-                }
-            }) { Text("Add") }
+        // Add by URL
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                .clickable { showUrlDialog = true }
+                .padding(vertical = 12.dp, horizontal = 0.dp)
+        ) {
+            Icon(Icons.Default.Link, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(16.dp))
+            Text("Add by URL", style = MaterialTheme.typography.bodyLarge)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -267,7 +301,7 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
                         AsyncImage(
                             model = result.artworkUrl600 ?: result.artworkUrl100,
                             contentDescription = null,
-                            modifier = Modifier.size(56.dp),
+                            modifier = Modifier.size(56.dp).androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Crop,
                             placeholder = rememberVectorPainter(Icons.Default.Podcasts),
                             error = rememberVectorPainter(Icons.Default.Podcasts)
