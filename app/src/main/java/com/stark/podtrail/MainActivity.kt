@@ -140,7 +140,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                         title = { Text("PodTrack", style = MaterialTheme.typography.headlineMedium) },
                         actions = {
                             IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
-                             // Stats hidden for now as per mockup, or moved to profile?
+                             // Stats hidden for now or moved to profile?
                             IconButton(onClick = { }) { Icon(Icons.Default.Menu, contentDescription = "Menu") } // Hamburger placeholder
                             IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
                         },
@@ -639,9 +639,9 @@ fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Uni
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 } 
-                // If not listened, show nothing inside (just border), or maybe a small tick? Mockup implies empty if unchecked? 
-                // Or "Check" icon that becomes filled. 
-                // Mockup shows: Filled Blue Circle with White Checkmark.
+                // If not listened, show nothing inside (just border).
+                // "Check" icon that becomes filled. 
+                // Suggests "Tap to Mark Done".
                 // It suggests "Tap to Mark Done".
                 // If unchecked, it usually is an empty circle.
                 // I'll leave it empty if unchecked.
