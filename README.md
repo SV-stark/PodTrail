@@ -78,7 +78,6 @@ Follow these steps to build and run the application locally.
 ## 🗺️ Roadmap
 
 - [ ] **Cloud Sync**: Sync subscriptions and progress across devices.
-- [ ] **Offline Playback**: Download episodes for offline listening.
 
 
 ## 📄 License
