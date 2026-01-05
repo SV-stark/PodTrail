@@ -7,7 +7,7 @@
 
   ![Android Build](https://github.com/SV-stark/PodTrail/actions/workflows/build.yml/badge.svg)
   ![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)
-  ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-purple.svg)
+  ![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-purple.svg)
 
   <p>
     <b>A minimal, privacy-focused Android podcast tracker.</b>

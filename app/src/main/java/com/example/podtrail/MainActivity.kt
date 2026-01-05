@@ -28,6 +28,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Podcasts
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.foundation.lazy.items
 import kotlinx.coroutines.isActive
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -264,11 +274,11 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
             placeholder = { Text("Search podcast...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+            shape = RoundedCornerShape(50),
             colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
             ),
             singleLine = true
         )
@@ -280,7 +290,7 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .clickable { showUrlDialog = true }
                 .padding(vertical = 12.dp, horizontal = 0.dp)
         ) {
@@ -301,7 +311,7 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
                         AsyncImage(
                             model = result.artworkUrl600 ?: result.artworkUrl100,
                             contentDescription = null,
-                            modifier = Modifier.size(56.dp).androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Crop,
                             placeholder = rememberVectorPainter(Icons.Default.Podcasts),
                             error = rememberVectorPainter(Icons.Default.Podcasts)
