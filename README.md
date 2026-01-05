@@ -18,7 +18,7 @@
 
 ## 📖 Overview
 
-**PodTrail** is a lightweight Android application designed for podcast enthusiasts who value simplicity and privacy. Built with modern Android technologies, it offers a seamless experience for subscribing to, managing, and listening to your favorite podcasts.
+**PodTrail** is a lightweight Android application designed for podcast enthusiasts who value simplicity and privacy. Built with modern Android technologies, it offers a seamless experience for tracking your favorite podcasts.
 
 ## ✨ Features
 
