@@ -65,6 +65,8 @@ fun ProfileScreen(
             .mapValues { entry -> entry.value.size }
     }
 
+    val favoritePodcasts by vm.favoritePodcasts.collectAsState()
+
     // Image Pickers
     val profileImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -85,6 +87,8 @@ fun ProfileScreen(
     // State for background selection
     var showBgSelectionDialog by remember { mutableStateOf(false) }
     var showPodcastPicker by remember { mutableStateOf(false) }
+    var showNameEditDialog by remember { mutableStateOf(false) }
+    var tempName by remember { mutableStateOf("") }
 
     if (showBgSelectionDialog) {
         AlertDialog(
@@ -149,6 +153,32 @@ fun ProfileScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showPodcastPicker = false }) { Text("Cancel") } }
+        )
+        )
+    }
+
+    if (showNameEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showNameEditDialog = false },
+            title = { Text("Edit Name") },
+            text = {
+                OutlinedTextField(
+                    value = tempName,
+                    onValueChange = { tempName = it },
+                    label = { Text("Your Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (tempName.isNotBlank()) {
+                        vm.setUserName(tempName)
+                        showNameEditDialog = false
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { showNameEditDialog = false }) { Text("Cancel") } }
         )
     }
 
@@ -259,11 +289,21 @@ fun ProfileScreen(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary
             )
-            Text(
-                text = "PodTrail User", // Dynamic name could be added later
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { 
+                    tempName = appSettings.userName ?: "PodTrail User"
+                    showNameEditDialog = true 
+                }
+            ) {
+                Text(
+                    text = appSettings.userName ?: "PodTrail User",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.Edit, "Edit Name", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
         Spacer(Modifier.height(32.dp))
@@ -426,6 +466,48 @@ fun ProfileScreen(
                                   Text("Subs", style = MaterialTheme.typography.labelSmall)
                              }
                         }
+                    }
+                }
+            }
+        }
+        
+        
+        Spacer(Modifier.height(32.dp))
+
+        // --- Favorites Section ---
+        if (favoritePodcasts.isNotEmpty()) {
+            SectionHeader("Favorites")
+            
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.height(160.dp) // Fixed height for a row or small grid
+            ) {
+                items(favoritePodcasts) { p ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.width(100.dp)
+                    ) {
+                        AsyncImage(
+                            model = p.imageUrl,
+                            contentDescription = p.title,
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = p.title,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                     }
                 }
             }

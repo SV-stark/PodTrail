@@ -17,7 +17,8 @@ data class AppSettings(
     val useAmoled: Boolean = false,
     val customColor: Int = 0xFF6200EE.toInt(), // Purple default
     val profileImageUri: String? = null,
-    val profileBgUri: String? = null
+    val profileBgUri: String? = null,
+    val userName: String? = null
 )
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
@@ -32,6 +33,7 @@ class SettingsRepository(private val context: Context) {
         val CUSTOM_COLOR = intPreferencesKey("custom_color")
         val PROFILE_IMAGE = stringPreferencesKey("profile_image")
         val PROFILE_BG = stringPreferencesKey("profile_bg")
+        val USER_NAME = stringPreferencesKey("user_name")
     }
 
     val settings: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -41,7 +43,8 @@ class SettingsRepository(private val context: Context) {
             useAmoled = prefs[Keys.USE_AMOLED] ?: false,
             customColor = prefs[Keys.CUSTOM_COLOR] ?: 0xFF6200EE.toInt(),
             profileImageUri = prefs[Keys.PROFILE_IMAGE],
-            profileBgUri = prefs[Keys.PROFILE_BG]
+            profileBgUri = prefs[Keys.PROFILE_BG],
+            userName = prefs[Keys.USER_NAME]
         )
     }
 
@@ -71,6 +74,10 @@ class SettingsRepository(private val context: Context) {
         dataStore.edit {
             if (uri != null) it[Keys.PROFILE_BG] = uri else it.remove(Keys.PROFILE_BG)
         }
+    }
+
+    suspend fun setUserName(name: String) {
+        dataStore.edit { it[Keys.USER_NAME] = name }
     }
 
     fun getDatabasePath(): java.io.File {

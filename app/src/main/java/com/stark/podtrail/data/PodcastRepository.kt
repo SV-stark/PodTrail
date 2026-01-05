@@ -15,6 +15,12 @@ class PodcastRepository(private val dao: PodcastDao) {
     
     suspend fun allPodcastsDirect() = dao.getAllPodcasts().first().map { it.podcast }
 
+    fun favoritePodcasts() = dao.getFavoritePodcasts()
+
+    suspend fun toggleFavorite(id: Long, currentStatus: Boolean) {
+        dao.updateFavoriteStatus(id, !currentStatus)
+    }
+
     suspend fun addPodcast(feedUrl: String, genre: String? = null): Result<Long> = withContext(Dispatchers.IO) {
         try {
             val (mappedPodcast, episodes) = parser.fetchFeed(feedUrl)

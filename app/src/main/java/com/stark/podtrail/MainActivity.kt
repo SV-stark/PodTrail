@@ -390,13 +390,22 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
                 TextButton(onClick = { showInfoPodcast = null }) { Text("Close") }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        vm.deletePodcast(p.id)
-                        showInfoPodcast = null
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Remove Podcast") }
+                Row {
+                    IconButton(onClick = { vm.toggleFavorite(p.id, p.isFavorite) }) {
+                        Icon(
+                            if (p.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (p.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            vm.deletePodcast(p.id)
+                            showInfoPodcast = null
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) { Text("Remove Podcast") }
+                }
             }
         )
     }

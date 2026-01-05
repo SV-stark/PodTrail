@@ -33,6 +33,23 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     val podcasts = repo.allPodcasts()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val favoritePodcasts = repo.favoritePodcasts()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val settingsRepo = com.stark.podtrail.data.SettingsRepository(app)
+
+    fun toggleFavorite(podcastId: Long, currentStatus: Boolean) {
+        viewModelScope.launch {
+            repo.toggleFavorite(podcastId, currentStatus)
+        }
+    }
+
+    fun setUserName(name: String) {
+        viewModelScope.launch {
+            settingsRepo.setUserName(name)
+        }
+    }
+
     fun addPodcast(feedUrl: String, genre: String? = null, onResult: (Result<Long>) -> Unit) {
         viewModelScope.launch {
             val res = repo.addPodcast(feedUrl, genre)

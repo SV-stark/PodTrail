@@ -10,7 +10,8 @@ data class Podcast(
     val feedUrl: String,
     val imageUrl: String? = null,
     val description: String? = null,
-    val primaryGenre: String? = null
+    val primaryGenre: String? = null,
+    val isFavorite: Boolean = false
 )
 
 data class PodcastWithStats(

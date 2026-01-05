@@ -18,6 +18,12 @@ interface PodcastDao {
     """)
     fun getAllPodcasts(): Flow<List<PodcastWithStats>>
 
+    @Query("SELECT * FROM podcasts WHERE isFavorite = 1")
+    fun getFavoritePodcasts(): Flow<List<Podcast>>
+
+    @Query("UPDATE podcasts SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPodcast(podcast: Podcast): Long
 
