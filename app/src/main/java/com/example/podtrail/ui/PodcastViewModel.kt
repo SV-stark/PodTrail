@@ -92,6 +92,19 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
 
     suspend fun getEpisode(id: Long) = repo.getEpisode(id)
 
+    fun fetchAndUpdateDescription(episodeId: Long) {
+        viewModelScope.launch {
+            val ep = repo.getEpisode(episodeId) ?: return@launch
+            val fullDesc = repo.fetchRemoteEpisodeDescription(ep.podcastId, ep.guid)
+            if (fullDesc != null && fullDesc != ep.description) {
+                // Update DB with full description
+                 repo.markEpisodeListened(ep.copy(description = fullDesc), ep.listened)
+                 // NOTE: markEpisodeListened updates the whole object, so this works to save description too.
+                 // Ideally should have a dedicated updateEpisode(episode) method but this reuses existing logic safely.
+            }
+        }
+    }
+
     fun setListened(e: com.example.podtrail.data.EpisodeListItem, listened: Boolean) {
         viewModelScope.launch {
             repo.markEpisodeListened(e, listened)

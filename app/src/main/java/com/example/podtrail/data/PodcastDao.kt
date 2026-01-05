@@ -24,6 +24,9 @@ interface PodcastDao {
     @Query("SELECT * FROM podcasts WHERE feedUrl = :feedUrl LIMIT 1")
     suspend fun getPodcastByFeedUrl(feedUrl: String): Podcast?
 
+    @Query("SELECT * FROM podcasts WHERE id = :id LIMIT 1")
+    suspend fun getPodcastById(id: Long): Podcast?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertEpisodes(episodes: List<Episode>)
 

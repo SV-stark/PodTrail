@@ -111,7 +111,7 @@ class FeedParser {
                     val name = rawName.lowercase(Locale.ROOT)
                     if (name == "item") {
                         insideItem = true
-                        title = null; guid = null; pubDate = 0; audioUrl = null; imageUrl = null; episodeNumber = null; durationMillis = null
+                        title = null; guid = null; pubDate = 0; audioUrl = null; imageUrl = null; episodeNumber = null; durationMillis = null; description = null
                     } else if (insideItem) {
                         if (name == "title") {
                             parser.next()

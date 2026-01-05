@@ -93,4 +93,15 @@ class PodcastRepository(private val dao: PodcastDao) {
     suspend fun deletePodcast(podcastId: Long) {
         dao.deletePodcast(podcastId)
     }
+
+    suspend fun fetchRemoteEpisodeDescription(podcastId: Long, episodeGuid: String): String? = withContext(Dispatchers.IO) {
+        val podcast = dao.getPodcastById(podcastId) ?: return@withContext null
+        try {
+            val (_, episodes) = parser.fetchFeed(podcast.feedUrl)
+            val match = episodes.find { (it.guid == episodeGuid) || (it.title == episodeGuid) } // guid fallback to title
+            match?.description
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

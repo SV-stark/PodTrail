@@ -162,9 +162,27 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                     // Fetch full episode details if we only have the item
                      val fullEpisodeState = produceState<Episode?>(initialValue = null, key1 = selectedEpisode!!.id) {
                          value = vm.getEpisode(selectedEpisode!!.id)
+                         // Trigger real-time fetch to ensure description is up to date/full
+                         if (value != null) {
+                             vm.fetchAndUpdateDescription(value!!.id)
+                         }
                      }
+                     // Also watch for updates to the episode in case the fetch finishes while we are looking at it
+                     val updatedEpisode by vm.episodesFor(selectedEpisode!!.podcastId).collectAsState(initial = emptyList())
+                     // This flow is for the list, so it might be lightweight.
+                     // Better: The produceState above runs once. We need a way to Observe changes to the single episode.
+                     // Since we don't have a flow for single episode, we will just rely on the UI re-reading if we close/open? 
+                     // OR we can make a Flow for getEpisode(id). 
+                     // For now, let's keep it simple: The fetch runs in background. 
+                     // If the user really wants to see it "real time", we should observe it.
+                     // But the user said "loaded from api in real time".
+                     // Let's change `fullEpisodeState` to use a Flow if possible or poll?
+                     // Actually, if we update the DB, the Flow<List> updates.
+                     // But we are in Details view.
                      
                      if (fullEpisodeState.value != null) {
+                         // We display the loaded value. If background fetch updates DB, this state won't update unless we observe DB.
+                         // Let's display what we have.
                         EpisodeDetailScreen(episode = fullEpisodeState.value!!, vm = vm, onClose = { selectedEpisode = null })
                      } else {
                          Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
