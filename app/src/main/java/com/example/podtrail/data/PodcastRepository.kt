@@ -13,12 +13,13 @@ class PodcastRepository(private val dao: PodcastDao) {
     
     suspend fun allPodcastsDirect() = dao.getAllPodcasts().first().map { it.podcast }
 
-    suspend fun addPodcast(feedUrl: String): Result<Long> = withContext(Dispatchers.IO) {
+    suspend fun addPodcast(feedUrl: String, genre: String? = null): Result<Long> = withContext(Dispatchers.IO) {
         try {
             val (mappedPodcast, episodes) = parser.fetchFeed(feedUrl)
             val podcastTitle = mappedPodcast?.title ?: feedUrl
             val podcastImage = mappedPodcast?.imageUrl
             val podcastDesc = mappedPodcast?.description
+            val podcastGenre = genre ?: mappedPodcast?.genre ?: "Uncategorized"
             
             // If podcast exists, reuse id; otherwise insert
             val existing = dao.getPodcastByFeedUrl(feedUrl)
@@ -26,7 +27,8 @@ class PodcastRepository(private val dao: PodcastDao) {
                 title = podcastTitle, 
                 feedUrl = feedUrl, 
                 imageUrl = podcastImage,
-                description = podcastDesc
+                description = podcastDesc,
+                primaryGenre = podcastGenre
             )).let { id ->
                 if (id <= 0 && existing != null) existing.id else id
             }

@@ -199,7 +199,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                     when (selectedTab) {
                         0 -> PodcastListScreen(vm) { podcast -> selectedPodcast = podcast }
                         1 -> DiscoverScreen(vm)
-                        2 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Profile Coming Soon") }
+                        2 -> ProfileScreen(vm, settingsRepo, appSettings)
                     }
                 }
             }
@@ -248,7 +248,7 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
             Spacer(Modifier.width(8.dp))
             Button(onClick = {
                 if (directUrl.isNotBlank()) {
-                    vm.addPodcast(directUrl) { }
+                    vm.addPodcast(directUrl, null) { }
                     onPodcastAdded()
                 }
             }) { Text("Add") }
@@ -275,7 +275,7 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
                     trailingContent = {
                         Button(onClick = {
                             result.feedUrl?.let { url ->
-                                vm.addPodcast(url) { }
+                                vm.addPodcast(url, result.primaryGenreName) { }
                                 onPodcastAdded()
                             }
                         }) { Text("Add") }

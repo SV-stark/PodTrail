@@ -18,9 +18,9 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     val podcasts = repo.allPodcasts()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun addPodcast(feedUrl: String, onResult: (Result<Long>) -> Unit) {
+    fun addPodcast(feedUrl: String, genre: String? = null, onResult: (Result<Long>) -> Unit) {
         viewModelScope.launch {
-            val res = repo.addPodcast(feedUrl)
+            val res = repo.addPodcast(feedUrl, genre)
             onResult(res)
         }
     }
@@ -67,7 +67,7 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
              }
              
              if (feedUrl != null) {
-                 repo.addPodcast(feedUrl)
+                 repo.addPodcast(feedUrl, result.primaryGenreName)
              }
          }
     }

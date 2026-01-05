@@ -22,7 +22,8 @@ data class ParsedEpisode(
 data class ParsedPodcast(
     val title: String?,
     val imageUrl: String?,
-    val description: String?
+    val description: String?,
+    val genre: String? // New field
 )
 
 class FeedParser {
@@ -46,6 +47,7 @@ class FeedParser {
             var title: String? = null
             var imageUrl: String? = null
             var description: String? = null
+            var genre: String? = null
 
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
@@ -61,6 +63,8 @@ class FeedParser {
                     } else if (name.equals("description", ignoreCase = true) && description == null) {
                         parser.next()
                         description = parser.text
+                    } else if (name.equals("itunes:category", ignoreCase = true) && genre == null) {
+                        genre = parser.getAttributeValue(null, "text")
                     }
                 }
                  // naive stop if we have both, or break after first item... 
@@ -71,7 +75,7 @@ class FeedParser {
                 }
                 event = parser.next()
             }
-            return ParsedPodcast(title, imageUrl, description)
+            return ParsedPodcast(title, imageUrl, description, genre)
         } catch (e: Exception) { }
         return null
     }

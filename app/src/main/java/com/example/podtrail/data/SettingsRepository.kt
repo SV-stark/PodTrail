@@ -13,7 +13,9 @@ data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val useDynamicColor: Boolean = true,
     val useAmoled: Boolean = false,
-    val customColor: Int = 0xFF6200EE.toInt() // Purple default
+    val customColor: Int = 0xFF6200EE.toInt(), // Purple default
+    val profileImageUri: String? = null,
+    val profileBgUri: String? = null
 )
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
@@ -26,6 +28,8 @@ class SettingsRepository(private val context: Context) {
         val USE_DYNAMIC = booleanPreferencesKey("use_dynamic")
         val USE_AMOLED = booleanPreferencesKey("use_amoled")
         val CUSTOM_COLOR = intPreferencesKey("custom_color")
+        val PROFILE_IMAGE = stringPreferencesKey("profile_image")
+        val PROFILE_BG = stringPreferencesKey("profile_bg")
     }
 
     val settings: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -33,7 +37,9 @@ class SettingsRepository(private val context: Context) {
             themeMode = ThemeMode.valueOf(prefs[Keys.THEME_MODE] ?: ThemeMode.SYSTEM.name),
             useDynamicColor = prefs[Keys.USE_DYNAMIC] ?: true,
             useAmoled = prefs[Keys.USE_AMOLED] ?: false,
-            customColor = prefs[Keys.CUSTOM_COLOR] ?: 0xFF6200EE.toInt()
+            customColor = prefs[Keys.CUSTOM_COLOR] ?: 0xFF6200EE.toInt(),
+            profileImageUri = prefs[Keys.PROFILE_IMAGE],
+            profileBgUri = prefs[Keys.PROFILE_BG]
         )
     }
 
@@ -51,6 +57,18 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setCustomColor(color: Int) {
         dataStore.edit { it[Keys.CUSTOM_COLOR] = color }
+    }
+
+    suspend fun setProfileImage(uri: String?) {
+        dataStore.edit { 
+            if (uri != null) it[Keys.PROFILE_IMAGE] = uri else it.remove(Keys.PROFILE_IMAGE)
+        }
+    }
+
+    suspend fun setProfileBg(uri: String?) {
+        dataStore.edit {
+            if (uri != null) it[Keys.PROFILE_BG] = uri else it.remove(Keys.PROFILE_BG)
+        }
     }
 
     fun getDatabasePath(): java.io.File {
