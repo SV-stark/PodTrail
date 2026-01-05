@@ -13,6 +13,7 @@ data class SearchResponse(
     val results: List<SearchResult>
 )
 
+data class SearchResult(
     @SerializedName("collectionName") val collectionName: String?,
     @SerializedName("feedUrl") val feedUrl: String?,
     @SerializedName("artworkUrl600") val artworkUrl600: String?,
