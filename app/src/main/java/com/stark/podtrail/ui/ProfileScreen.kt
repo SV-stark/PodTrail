@@ -14,25 +14,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Collections
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -69,9 +70,7 @@ fun ProfileScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            scope.launch {
-                settingsRepo.setProfileImage(uri.toString())
-            }
+            scope.launch { settingsRepo.setProfileImage(uri.toString()) }
         }
     }
 
@@ -79,9 +78,7 @@ fun ProfileScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            scope.launch {
-                settingsRepo.setProfileBg(uri.toString())
-            }
+            scope.launch { settingsRepo.setProfileBg(uri.toString()) }
         }
     }
 
@@ -92,11 +89,11 @@ fun ProfileScreen(
     if (showBgSelectionDialog) {
         AlertDialog(
             onDismissRequest = { showBgSelectionDialog = false },
-            title = { Text("Change Background") },
+            title = { Text("Change Cover") },
             text = {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Choose from Library") },
+                        headlineContent = { Text("Choose from Podcast Art") },
                         leadingContent = { Icon(Icons.Default.Collections, null) },
                         modifier = Modifier.clickable { 
                             showBgSelectionDialog = false
@@ -104,7 +101,7 @@ fun ProfileScreen(
                         }
                     )
                     ListItem(
-                        headlineContent = { Text("Custom Image") },
+                        headlineContent = { Text("Upload Image") },
                         leadingContent = { Icon(Icons.Default.Image, null) },
                         modifier = Modifier.clickable { 
                             showBgSelectionDialog = false
@@ -121,7 +118,7 @@ fun ProfileScreen(
     if (showPodcastPicker) {
         AlertDialog(
             onDismissRequest = { showPodcastPicker = false },
-            title = { Text("Select Podcast") },
+            title = { Text("Select Podcast Art") },
             text = {
                 Box(Modifier.height(300.dp)) {
                     if (podcasts.isEmpty()) {
@@ -159,80 +156,121 @@ fun ProfileScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header Section
+        // --- Header Section ---
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            // Background Layer
+            // Cover Image
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
-                    .clickable { showBgSelectionDialog = true }
+                    .height(200.dp)
+                    .align(Alignment.TopCenter)
             ) {
                 if (appSettings.profileBgUri != null) {
                     AsyncImage(
                         model = appSettings.profileBgUri,
                         contentDescription = "Cover Image",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { showBgSelectionDialog = true }
                     )
-                    // Overlay for contrast
                     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)))
                 } else {
-                    // Dynamic Gradient Fallback (using primary color)
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.surface
                                     )
                                 )
                             )
+                            .clickable { showBgSelectionDialog = true }
                     )
+                }
+                
+                // Edit Cover Button
+                SmallFloatingActionButton(
+                    onClick = { showBgSelectionDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Icon(Icons.Default.Edit, "Edit Cover", modifier = Modifier.size(20.dp))
                 }
             }
 
-            // Profile Picture Layer
+            // Profile Picture (Overlapping)
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
+                    .offset(y = 50.dp) // Push down to overlap half out
                     .size(120.dp)
-                    .offset(y = 0.dp) // Sits right on the edge of the Box context, but we want it overlapping
             ) {
                  AsyncImage(
-                     model = appSettings.profileImageUri ?: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y", // Generic default
+                     model = appSettings.profileImageUri ?: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
                      contentDescription = "Profile Picture",
                      contentScale = ContentScale.Crop,
                      modifier = Modifier
                          .fillMaxSize()
                          .clip(CircleShape)
-                         .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                         .border(4.dp, MaterialTheme.colorScheme.background, CircleShape)
                          .clickable { 
                              profileImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                          }
                  )
+                 // Edit Profile Pic Badge
+                 Box(
+                     modifier = Modifier
+                         .align(Alignment.BottomEnd)
+                         .padding(4.dp)
+                         .size(32.dp)
+                         .background(MaterialTheme.colorScheme.primary, CircleShape)
+                         .border(2.dp, MaterialTheme.colorScheme.background, CircleShape),
+                     contentAlignment = Alignment.Center
+                 ) {
+                     Icon(
+                         Icons.Default.PhotoCamera, 
+                         contentDescription = null, 
+                         tint = MaterialTheme.colorScheme.onPrimary,
+                         modifier = Modifier.size(16.dp)
+                     )
+                 }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(60.dp)) // Clearance for profile pic
 
-        // Username (Static for now, could be added to settings)
-        Text(
-            text = "User Profile",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        // User Greeting
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Welcome Back",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            Text(
+                text = "PodTrail User", // Dynamic name could be added later
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
 
-        // Stats Cards
+        // --- Statistics Section ---
+        SectionHeader("Statistics")
+        
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -240,53 +278,55 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatCard(
-                title = "Total Episodes\nListened",
+                title = "Total Episodes",
                 value = totalEpisodesListened.toString(),
+                icon = Icons.Default.Headphones,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "Total Podcasts\nAdded",
-                value = totalPodcasts.toString(),
+                title = "Total Time",
+                value = formatTimeListenedShort(totalTimeListened),
+                icon = Icons.Default.AccessTime,
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier.weight(1f)
             )
         }
         
         Spacer(Modifier.height(16.dp))
-
-        // Time & Streak Stats
-        Row(
+        
+         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatCard(
-                title = "Total Time\nListened",
-                value = formatTimeListened(totalTimeListened),
+                title = "Subscribed",
+                value = totalPodcasts.toString(),
+                icon = Icons.Default.RssFeed,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "Current\nStreak",
+                title = "Streak",
                 value = "$currentStreak days",
+                icon = Icons.Default.LocalFireDepartment,
+                color = MaterialTheme.colorScheme.errorContainer,
                 modifier = Modifier.weight(1f)
             )
         }
-        
-        Spacer(Modifier.height(24.dp))
-        
-        // Badges Section
-        Text(
-            text = "Badges",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(Modifier.height(32.dp))
+
+        // --- Achievements Section ---
+        SectionHeader("Achievements")
         
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             badges.forEach { badge ->
@@ -294,18 +334,26 @@ fun ProfileScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
 
-        // Donut Chart Section
+        // --- Insights Section ---
+        SectionHeader("Listening Insights")
+        
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Genre Breakdown", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(16.dp))
+                
                 if (totalPodcasts == 0) {
-                     Text("No podcasts added yet.", modifier = Modifier.align(Alignment.CenterHorizontally))
+                     Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                         Text("Subscribe to podcasts to see insights.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                     }
                 } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -317,12 +365,8 @@ fun ProfileScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val colors = listOf(
-                                Color(0xFF4CAF50), // Green
-                                Color(0xFF2196F3), // Blue
-                                Color(0xFFFFC107), // Amber
-                                Color(0xFFF44336), // Red
-                                Color(0xFF9C27B0), // Purple
-                                Color(0xFF00BCD4)  // Cyan
+                                Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFFC107),
+                                Color(0xFFF44336), Color(0xFF9C27B0), Color(0xFF00BCD4)
                             )
                             
                             var colorIndex = 0
@@ -330,32 +374,36 @@ fun ProfileScreen(
                                 val color = colors[colorIndex % colors.size]
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(Modifier.size(12.dp).background(color, CircleShape))
-                                    Spacer(Modifier.width(8.dp))
+                                    Spacer(Modifier.width(12.dp))
                                     Text(
                                         text = entry.key,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Text(
+                                        text = "${entry.value}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                                 colorIndex++
                             }
                         }
 
+                        Spacer(Modifier.width(16.dp))
+
                         // Chart
                         Box(
-                            modifier = Modifier.size(150.dp),
+                            modifier = Modifier.size(140.dp),
                             contentAlignment = Alignment.Center
                         ) {
                              Canvas(modifier = Modifier.size(120.dp)) {
                                  val total = totalPodcasts.toFloat()
                                  var startAngle = -90f
                                  val colors = listOf(
-                                    Color(0xFF4CAF50),
-                                    Color(0xFF2196F3),
-                                    Color(0xFFFFC107),
-                                    Color(0xFFF44336),
-                                    Color(0xFF9C27B0),
-                                    Color(0xFF00BCD4)
+                                    Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFFC107),
+                                    Color(0xFFF44336), Color(0xFF9C27B0), Color(0xFF00BCD4)
                                 )
                                 var colorIndex = 0
                                 
@@ -372,82 +420,130 @@ fun ProfileScreen(
                                     colorIndex++
                                 }
                              }
+                             // Center text
+                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                  Text(totalPodcasts.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                  Text("Subs", style = MaterialTheme.typography.labelSmall)
+                             }
                         }
                     }
                 }
             }
         }
         
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(48.dp))
     }
 }
 
 @Composable
-fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
+fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+fun StatCard(
+    title: String, 
+    value: String, 
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier.height(110.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha=0.4f)), // Lighter shade
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween, // Icon top, Content bottom
+            horizontalAlignment = Alignment.Start
         ) {
-            Text(
-                title, 
-                style = MaterialTheme.typography.labelSmall, 
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                value, 
-                style = MaterialTheme.typography.headlineMedium, 
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha=0.5f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                 Icon(icon, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+            }
+            
+            Column {
+                Text(
+                    value, 
+                    style = MaterialTheme.typography.titleLarge, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    title, 
+                    style = MaterialTheme.typography.labelMedium, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
-
 
 @Composable
 fun BadgeCard(badge: com.stark.podtrail.ui.Badge) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (badge.unlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.3f)
+            containerColor = if (badge.unlocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
         ),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.size(100.dp, 120.dp)
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.width(110.dp).height(130.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
+            modifier = Modifier.fillMaxSize().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = if (badge.unlocked) badge.icon else Icons.Default.Lock,
-                contentDescription = null,
-                tint = if (badge.unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.5f),
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        if (badge.unlocked) MaterialTheme.colorScheme.primary.copy(alpha=0.2f) else MaterialTheme.colorScheme.surface.copy(alpha=0.5f), 
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (badge.unlocked) badge.icon else Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = if (badge.unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.5f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(Modifier.height(12.dp))
             Text(
                 badge.name, 
                 style = MaterialTheme.typography.labelMedium, 
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                fontWeight = if (badge.unlocked) FontWeight.Bold else FontWeight.Normal,
                 color = if (badge.unlocked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
-private fun formatTimeListened(millis: Long): String {
+private fun formatTimeListenedShort(millis: Long): String {
     val seconds = millis / 1000
     val days = seconds / (24 * 3600)
     val hours = (seconds % (24 * 3600)) / 3600
     val minutes = (seconds % 3600) / 60
     
-    return if (days > 0) "${days}d ${hours}h" else "${hours}h ${minutes}m"
+    return when {
+        days > 0 -> "${days}d ${hours}h"
+        hours > 0 -> "${hours}h ${minutes}m"
+        else -> "${minutes}m"
+    }
 }
 
