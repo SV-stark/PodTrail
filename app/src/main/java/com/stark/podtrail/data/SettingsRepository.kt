@@ -7,6 +7,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+import androidx.room.withTransaction
+
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 data class AppSettings(
@@ -88,17 +90,6 @@ class SettingsRepository(private val context: Context) {
                 val db = PodcastDatabase.getInstance(context)
                 val dao = db.podcastDao()
                 
-                db.runInTransaction {
-                    // We need to run this in a transaction block
-                    // However, runInTransaction is blocking, so we launch a couroutine inside? 
-                    // No, room's runInTransaction takes a Runnable.
-                    // Accessing suspend functions inside runInTransaction can be tricky if they are suspend.
-                    // Fortunately, Room's dao methods can be blocking if not suspend, OR we can just do individual calls if we accept non-atomicity, OR we use withTransaction helper.
-                    // But here we're inside a suspend function already.
-                    // Let's use Room's withTransaction.
-                }
-                
-                // Simpler approach: call DAOs directly. Since we are in suspend function.
                 // To ensure atomicity:
                 androidx.room.withTransaction(db) {
                     dao.deleteAllEpisodes()
