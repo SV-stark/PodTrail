@@ -476,7 +476,7 @@ fun ProfileScreen(
         }
         
         
-        }
+
         
         Spacer(Modifier.height(32.dp))
 
