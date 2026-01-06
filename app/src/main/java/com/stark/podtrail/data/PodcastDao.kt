@@ -10,7 +10,8 @@ abstract class PodcastDao {
         SELECT 
             p.*, 
             COUNT(e.id) as totalEpisodes,
-            SUM(CASE WHEN e.listened = 1 THEN 1 ELSE 0 END) as listenedEpisodes
+            SUM(CASE WHEN e.listened = 1 THEN 1 ELSE 0 END) as listenedEpisodes,
+            SUM(CASE WHEN e.listened = 1 THEN e.durationMillis ELSE 0 END) as timeListened
         FROM podcasts p
         LEFT JOIN episodes e ON p.id = e.podcastId
         GROUP BY p.id
@@ -141,4 +142,26 @@ abstract class PodcastDao {
             }
         }
     }
+
+    @Query("""
+        SELECT 
+            p.*, 
+            COUNT(e.id) as totalEpisodes,
+            SUM(CASE WHEN e.listened = 1 THEN 1 ELSE 0 END) as listenedEpisodes,
+            SUM(CASE WHEN e.listened = 1 THEN e.durationMillis ELSE 0 END) as timeListened
+        FROM podcasts p
+        LEFT JOIN episodes e ON p.id = e.podcastId
+        GROUP BY p.id
+        ORDER BY timeListened DESC
+        LIMIT 5
+    """)
+    abstract fun getTopPodcastsByDuration(): Flow<List<PodcastWithStats>>
+
+    @Query("SELECT lastPlayedTimestamp, durationMillis FROM episodes WHERE listened = 1 AND lastPlayedTimestamp > :since")
+    abstract fun getListenedEpisodesSince(since: Long): Flow<List<EpisodeActivityData>>
 }
+
+data class EpisodeActivityData(
+    val lastPlayedTimestamp: Long,
+    val durationMillis: Long?
+)

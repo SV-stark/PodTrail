@@ -167,6 +167,12 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         
     val currentStreak = repo.getCurrentStreak()
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
+    val weeklyActivity = repo.getLast7DaysActivity()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+
+    val topPodcasts = repo.getTopPodcastsByDuration()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
         
     val badges = combine(totalTimeListened, currentStreak, podcasts) { time, streak, podList ->
         listOf(

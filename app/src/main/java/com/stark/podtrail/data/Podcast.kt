@@ -1,7 +1,9 @@
 package com.stark.podtrail.data
 
 import androidx.room.Entity
+import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Embedded
 
 @Entity(tableName = "podcasts")
 data class Podcast(
@@ -15,7 +17,8 @@ data class Podcast(
 )
 
 data class PodcastWithStats(
-    @androidx.room.Embedded val podcast: Podcast,
+    @Embedded val podcast: Podcast,
     val totalEpisodes: Int,
-    val listenedEpisodes: Int
+    val listenedEpisodes: Int,
+    val timeListened: Long? = 0L // New field
 )

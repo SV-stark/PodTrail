@@ -476,7 +476,22 @@ fun ProfileScreen(
         }
         
         
+        }
+        
         Spacer(Modifier.height(32.dp))
+
+        // --- Weekly Activity ---
+        val weeklyActivity by vm.weeklyActivity.collectAsState()
+        WeeklyActivityChart(weeklyActivity)
+
+        Spacer(Modifier.height(32.dp))
+
+        // --- Top Podcasts ---
+        val topPodcasts by vm.topPodcasts.collectAsState()
+        if (topPodcasts.isNotEmpty()) {
+            TopPodcastsList(topPodcasts)
+            Spacer(Modifier.height(32.dp))
+        }
 
         // --- Favorites Section ---
         if (favoritePodcasts.isNotEmpty()) {
@@ -521,8 +536,115 @@ fun ProfileScreen(
     }
 }
 
+// --- New Composable: Weekly Activity Chart ---
 @Composable
-fun SectionHeader(title: String) {
+fun WeeklyActivityChart(activityMap: Map<Int, Long>) {
+    val days = (0..6).map { i ->
+        val cal = java.util.Calendar.getInstance()
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -i)
+        cal
+    }.reversed() // Show Mon -> Sun or just chronological
+
+    val maxVal = activityMap.values.maxOrNull() ?: 1L
+    val maxMinutes = kotlin.math.max(maxVal / 60000f, 1f) // Normalize to minutes
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(200.dp)
+    ) {
+        SectionHeader("Weekly Activity")
+        
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            days.forEach { date ->
+                val dayKey = date.get(java.util.Calendar.DAY_OF_YEAR)
+                val millis = activityMap[dayKey] ?: 0L
+                val minutes = millis / 60000f
+                val heightRatio = (minutes / maxMinutes).coerceIn(0.1f, 1f)
+                
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Bar
+                    Box(
+                        modifier = Modifier
+                            .width(12.dp)
+                            .fillMaxHeight(heightRatio)
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    // Label (Day Name)
+                    Text(
+                        text = java.text.SimpleDateFormat("E", java.util.Locale.getDefault()).format(date.time).take(1),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+// --- New Composable: Top Podcasts List ---
+@Composable
+fun TopPodcastsList(podcasts: List<PodcastWithStats>) {
+    Column(Modifier.padding(horizontal = 16.dp)) {
+        SectionHeader("Top Podcasts")
+        
+        podcasts.forEachIndexed { index, p ->
+            val timeString = formatTimeListenedShort(p.timeListened ?: 0L)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "#${index + 1}", 
+                    style = MaterialTheme.typography.labelLarge, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(32.dp)
+                )
+                
+                AsyncImage(
+                    model = p.podcast.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                
+                Spacer(Modifier.width(12.dp))
+                
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        p.podcast.title, 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "$timeString listened",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
     Text(
         text = title,
         style = MaterialTheme.typography.titleLarge,

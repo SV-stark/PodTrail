@@ -183,6 +183,39 @@ class PodcastRepository(private val dao: PodcastDao) {
         
         streak
     }
+
+    fun getTopPodcastsByDuration() = dao.getTopPodcastsByDuration()
+
+    fun getLast7DaysActivity(): Flow<Map<Int, Long>> {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, -6) // 7 days inclusive
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        val since = cal.timeInMillis
+
+        return dao.getListenedEpisodesSince(since).map { activityData ->
+             val dailyMap = mutableMapOf<Int, Long>()
+             // Initialize last 7 days with 0
+             for (i in 0..6) {
+                 val dayCal = Calendar.getInstance()
+                 dayCal.add(Calendar.DAY_OF_YEAR, -i)
+                 val dayKey = dayCal.get(Calendar.DAY_OF_YEAR)
+                 dailyMap[dayKey] = 0L
+             }
+
+             activityData.forEach { data ->
+                 val c = Calendar.getInstance()
+                 c.timeInMillis = data.lastPlayedTimestamp
+                 val dayKey = c.get(Calendar.DAY_OF_YEAR)
+                 // Only sum up if it's within our window (query handles this mostly, but exact day boundary might vary)
+                 if (dailyMap.containsKey(dayKey)) {
+                     dailyMap[dayKey] = (dailyMap[dayKey] ?: 0L) + (data.durationMillis ?: 0L)
+                 }
+             }
+             dailyMap
+        }
+    }
     
     suspend fun getUpNext(): List<Episode> = withContext(Dispatchers.IO) {
         val podcasts = dao.getAllPodcasts().first()
