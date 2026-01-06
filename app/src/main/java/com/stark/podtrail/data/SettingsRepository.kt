@@ -123,7 +123,7 @@ class SettingsRepository(private val context: Context) {
                             }
                             
                             // 2. Insert Episodes (Stubs)
-                            val episodeStubs = backupData.episodes.mapNotNull { me ->
+                            val episodeStubs = backupData.episodes?.mapNotNull { me ->
                                 val pid = urlToIdMap[me.feedUrl]
                                 if (pid != null) {
                                     Episode(
@@ -140,7 +140,7 @@ class SettingsRepository(private val context: Context) {
                                     )
                                 } else null
                             }
-                            dao.insertAllEpisodes(episodeStubs)
+                            dao.insertAllEpisodes(episodeStubs ?: emptyList())
                         }
                         return@withContext true
                     }

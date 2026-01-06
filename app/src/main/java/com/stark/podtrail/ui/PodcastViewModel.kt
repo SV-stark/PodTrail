@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.coroutines.launch
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+
 data class Badge(
     val name: String,
     val description: String,
@@ -26,6 +28,7 @@ data class Badge(
     val unlocked: Boolean
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     private val db = PodcastDatabase.getInstance(app)
     private val repo = PodcastRepository(db.podcastDao())

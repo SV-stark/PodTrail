@@ -128,7 +128,7 @@ fun ContinueListeningCard(episode: Episode, onClick: () -> Unit) {
                 val progress = if (episode.durationMillis != null && episode.durationMillis > 0) 
                     episode.playbackPosition.toFloat() / episode.durationMillis.toFloat()
                 else 0f
-                LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth().height(4.dp))
+                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp))
                 Spacer(Modifier.height(8.dp))
                 Text("Left: ${formatDuration((episode.durationMillis ?: 0) - episode.playbackPosition)}", style = MaterialTheme.typography.labelSmall)
             }

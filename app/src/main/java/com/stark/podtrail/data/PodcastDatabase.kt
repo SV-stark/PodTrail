@@ -19,7 +19,7 @@ abstract class PodcastDatabase : RoomDatabase() {
                     "podtrack.db"
                 )
                 .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build().also { INSTANCE = it }
             }
 

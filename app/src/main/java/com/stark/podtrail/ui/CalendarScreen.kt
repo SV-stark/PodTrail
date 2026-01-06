@@ -138,7 +138,7 @@ fun CalendarScreen(vm: PodcastViewModel, onEpisodeClick: (EpisodeListItem) -> Un
             }
         }
         
-        Divider(Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
         
         // List for selected day
         if (selectedDay != null) {

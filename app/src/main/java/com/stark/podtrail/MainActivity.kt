@@ -30,6 +30,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -307,7 +309,7 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(bottom = 16.dp)
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
             Spacer(Modifier.width(8.dp))
             Text("Add podcast", style = MaterialTheme.typography.titleLarge)
         }
@@ -547,13 +549,13 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) { 
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back") 
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") 
                     }
                 },
                 actions = {
                     Box {
                         IconButton(onClick = { showSortMenu = true }) {
-                            Icon(Icons.Default.Sort, contentDescription = "Sort")
+                            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
                         }
                         DropdownMenu(
                             expanded = showSortMenu,
@@ -734,7 +736,7 @@ fun EpisodeDetailScreen(episode: Episode, vm: PodcastViewModel, onClose: () -> U
                     .align(Alignment.TopStart)
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
             ) { 
-                Icon(Icons.Default.ArrowBack, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurface) 
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurface) 
             }
 
             // Central Image

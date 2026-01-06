@@ -12,8 +12,8 @@ data class BackupData(
 data class MinimalBackupData(
     @SerializedName("version") val version: Int = 2,
     @SerializedName("timestamp") val timestamp: Long = System.currentTimeMillis(),
-    @SerializedName("podcasts") val podcasts: List<MinimalPodcast>,
-    @SerializedName("episodes") val episodes: List<MinimalEpisode>
+    @SerializedName("podcasts") val podcasts: List<MinimalPodcast>?,
+    @SerializedName("episodes") val episodes: List<MinimalEpisode>?
 )
 
 data class MinimalPodcast(
