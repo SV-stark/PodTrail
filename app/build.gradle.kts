@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    // id("org.jetbrains.kotlin.android") // Built-in in AGP 9.0
     id("com.google.devtools.ksp")
     id("org.jetbrains.kotlin.plugin.compose")
 }
