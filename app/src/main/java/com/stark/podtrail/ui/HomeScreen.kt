@@ -14,6 +14,13 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Favorite
@@ -40,6 +47,7 @@ fun HomeScreen(
 
     val isRefreshing by vm.isRefreshing.collectAsState()
     var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) }
+    var isGridView by rememberSaveable { mutableStateOf(false) }
 
     if (podcasts.isEmpty() && !isRefreshing) {
         com.stark.podtrail.ui.EmptyState(
@@ -100,21 +108,60 @@ fun HomeScreen(
         
         // 3. All Podcasts
         item {
-            Text(
-                "Your Library", 
-                style = MaterialTheme.typography.titleLarge, 
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Your Library", 
+                    style = MaterialTheme.typography.titleLarge
+                )
+                
+                // View Toggle
+                IconButton(onClick = { isGridView = !isGridView }) {
+                    Icon(
+                        imageVector = if (isGridView) Icons.Default.List else Icons.Default.GridView,
+                        contentDescription = "Switch View"
+                    )
+                }
+            }
         }
         
-        
-        items(podcasts) { pStats ->
-             PodcastCard(
-                 podcast = pStats.podcast,
-                 stats = pStats,
-                 onClick = { onOpenPodcast(pStats.podcast) },
-                 onInfoClick = { showInfoPodcast = pStats.podcast }
-             )
+        if (isGridView) {
+            items(podcasts.chunked(3)) { rowPodcasts ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    for (pStats in rowPodcasts) {
+                        Box(Modifier.weight(1f)) {
+                            PodcastGridCard(
+                                podcast = pStats.podcast,
+                                stats = pStats,
+                                onClick = { onOpenPodcast(pStats.podcast) }
+                            )
+                        }
+                    }
+                    // Fill empty space if row has fewer than 3 items
+                    if (rowPodcasts.size < 3) {
+                        repeat(3 - rowPodcasts.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        } else {
+            items(podcasts) { pStats ->
+                 PodcastCard(
+                     podcast = pStats.podcast,
+                     stats = pStats,
+                     onClick = { onOpenPodcast(pStats.podcast) },
+                     onInfoClick = { showInfoPodcast = pStats.podcast }
+                 )
+            }
         }
     }
     
@@ -267,5 +314,88 @@ private fun formatDate(millis: Long): String {
     if (millis == 0L) return ""
     val sdf = java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault())
     return sdf.format(java.util.Date(millis))
+}
+
+@Composable
+fun PodcastGridCard(
+    podcast: Podcast,
+    stats: PodcastWithStats,
+    onClick: () -> Unit
+) {
+    val remaining = stats.totalEpisodes - stats.listenedEpisodes
+    val percentage = if (stats.totalEpisodes > 0) (stats.listenedEpisodes.toFloat() / stats.totalEpisodes.toFloat() * 100).toInt() else 0
+    val progress = if (stats.totalEpisodes > 0) stats.listenedEpisodes.toFloat() / stats.totalEpisodes.toFloat() else 0f
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.85f), // Slightly taller than square to accommodate title if needed, or just square
+        shape = RoundedCornerShape(12.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+    ) {
+        Column {
+            Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
+                AsyncImage(
+                    model = podcast.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                
+                // Overlays
+                // Top Left: Percentage
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        "$percentage%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontSize = 10.sp
+                    )
+                }
+
+                // Top Right: Remaining Episodes
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.9f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        "$remaining left",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 10.sp
+                    )
+                }
+                
+                // Bottom: Progress Bar
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(4.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f)
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                podcast.title,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 2.dp)
+            )
+        }
+    }
 }
 

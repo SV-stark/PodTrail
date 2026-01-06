@@ -82,7 +82,10 @@ import androidx.compose.foundation.border
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 
 
 class MainActivity : ComponentActivity() {
@@ -534,8 +537,13 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOption by vm.sortOption.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
+    var hideListened by rememberSaveable { mutableStateOf(false) }
     
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    val filteredEpisodes = remember(episodes, hideListened) {
+        if (hideListened) episodes.filter { !it.listened } else episodes
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -554,6 +562,14 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
                 },
                 actions = {
                     Box {
+                        // Hide/Show Listened Toggle
+                        IconButton(onClick = { hideListened = !hideListened }) {
+                            Icon(
+                                imageVector = if (hideListened) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (hideListened) "Show Listened" else "Hide Listened"
+                            )
+                        }
+
                         IconButton(onClick = { showSortMenu = true }) {
                             Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
                         }
@@ -601,7 +617,7 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(episodes) { ep ->
+            items(filteredEpisodes) { ep ->
                 EpisodeCard(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onDetails(ep) })
             }
         }
