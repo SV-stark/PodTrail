@@ -175,17 +175,17 @@ fun SettingsScreen(
 
             item {
                  val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                    androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+                    androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/gzip")
                 ) { uri ->
                     if (uri != null) {
                         scope.launch { repo.exportDatabase(uri) }
                     }
                 }
                 ClickablePreference(
-                    title = "Export Backup (JSON)",
-                    subtitle = "Backup your data to a JSON file",
+                    title = "Export Backup (GZIP)",
+                    subtitle = "Backup your data to a compressed JSON file",
                     icon = Icons.Default.Upload,
-                    onClick = { exportLauncher.launch("podtrail_backup.json") }
+                    onClick = { exportLauncher.launch("podtrail_backup.json.gz") }
                 )
             }
 
@@ -207,10 +207,10 @@ fun SettingsScreen(
                     }
                 }
                 ClickablePreference(
-                    title = "Import Backup (JSON)",
+                    title = "Import Backup (GZIP)",
                     subtitle = "Restore data (Overwrites current!)",
                     icon = Icons.Default.Download,
-                    onClick = { importLauncher.launch("application/json") }
+                    onClick = { importLauncher.launch("application/gzip") }
                 )
             }
 
@@ -220,46 +220,122 @@ fun SettingsScreen(
             item { PreferenceCategory("About") }
             
             item {
-                ClickablePreference(
-                    title = "Source Code",
-                    subtitle = "github.com/SV-stark/PodTrail",
-                    icon = Icons.Default.Code,
-                    onClick = { uriHandler.openUri("https://github.com/SV-stark/PodTrail") }
-                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // App Icon Placeholder (or actual icon if available resource)
+                        Icon(
+                            imageVector = Icons.Default.Podcasts,
+                            contentDescription = "App Logo",
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                .padding(12.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        
+                        Spacer(Modifier.height(16.dp))
+                        
+                        Text(
+                            text = "PodTrail",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        
+                        val version = remember {
+                             try {
+                                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                             } catch (e: Exception) { "1.0" }
+                        }
+                        
+                        Text(
+                            text = "Version $version",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(Modifier.height(24.dp))
+                        
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        
+                        Spacer(Modifier.height(16.dp))
+                        
+                        // Action Rows
+                        AboutActionRow(
+                            icon = Icons.Default.Code, 
+                            label = "Source Code", 
+                            onClick = { uriHandler.openUri("https://github.com/SV-stark/PodTrail") }
+                        )
+                        AboutActionRow(
+                            icon = Icons.Default.Person, 
+                            label = "Developed by SV-stark", 
+                            onClick = { uriHandler.openUri("https://github.com/SV-stark") }
+                        )
+                         AboutActionRow(
+                            icon = Icons.Default.Description, 
+                            label = "License (GPL v3)", 
+                            onClick = { uriHandler.openUri("https://github.com/SV-stark/PodTrail/blob/main/LICENSE") }
+                        )
+                    }
+                }
             }
             
             item {
-                ClickablePreference(
-                    title = "Developer",
-                    subtitle = "SV-stark",
-                    icon = Icons.Default.Person,
-                    onClick = { uriHandler.openUri("https://github.com/SV-stark") }
-                )
-            }
-
-            item {
-                val version = remember {
-                    try {
-                        context.packageManager.getPackageInfo(context.packageName, 0).versionName
-                    } catch (e: Exception) { "Unknown" }
-                }
-                ClickablePreference(
-                    title = "Version",
-                    subtitle = version,
-                    icon = Icons.Default.Info,
-                    onClick = {}
-                )
-            }
-             item {
-                ClickablePreference(
-                    title = "License",
-                    subtitle = "GPL v3 License",
-                    icon = Icons.Default.Description,
-                    onClick = { uriHandler.openUri("https://github.com/SV-stark/PodTrail/blob/main/LICENSE") }
-                )
+                 Box(
+                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                     contentAlignment = Alignment.Center
+                 ) {
+                     Text(
+                         text = "Made with ❤️ in Kotlin and Jetpack Compose",
+                         style = MaterialTheme.typography.labelSmall,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                     )
+                 }
             }
             
             item { Spacer(Modifier.height(32.dp)) }
         }
+    }
+}
+
+@Composable
+fun AboutActionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.weight(1f))
+        Icon(
+            imageVector = Icons.Default.ArrowForward,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
