@@ -104,6 +104,11 @@ class MainActivity : ComponentActivity() {
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     val context = LocalContext.current
     val settingsRepo = remember { com.stark.podtrail.data.SettingsRepository(context) }
+    val podcastRepository = remember { 
+        com.stark.podtrail.data.PodcastRepository(
+            com.stark.podtrail.data.PodcastDatabase.getInstance(context).podcastDao()
+        ) 
+    }
     val appSettings by settingsRepo.settings.collectAsState(initial = com.stark.podtrail.data.AppSettings())
 
     var showSearch by remember { mutableStateOf(false) }
