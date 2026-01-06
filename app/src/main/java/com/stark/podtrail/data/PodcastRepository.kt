@@ -76,7 +76,7 @@ class PodcastRepository(private val dao: PodcastDao) {
                         title = mappedPodcast.title ?: podcast.title,
                         imageUrl = mappedPodcast.imageUrl,
                         description = mappedPodcast.description,
-                        primaryGenre = if (podcast.primaryGenre == "Uncategorized") mappedPodcast.genre ?: "Uncategorized" else podcast.primaryGenre
+                        primaryGenre = mappedPodcast.genre ?: podcast.primaryGenre ?: "Uncategorized"
                     )
                     // Only update if something relevant successfully parsed and is different
                     if (updatedPodcast != podcast) {
