@@ -561,7 +561,7 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
                     }
                 },
                 actions = {
-                    Box {
+
                         // Hide/Show Listened Toggle
                         IconButton(onClick = { hideListened = !hideListened }) {
                             Icon(
@@ -598,7 +598,7 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
                                 leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_LONGEST) Icon(Icons.Default.Check, null) }
                             )
                         }
-                    }
+
                 },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.largeTopAppBarColors(

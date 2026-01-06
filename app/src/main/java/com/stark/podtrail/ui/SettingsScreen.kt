@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.stark.podtrail.data.AppSettings
 import com.stark.podtrail.data.SettingsRepository
 import com.stark.podtrail.data.ThemeMode
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.stark.podtrail.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -235,15 +238,13 @@ fun SettingsScreen(
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // App Icon Placeholder (or actual icon if available resource)
-                        Icon(
-                            imageVector = Icons.Default.Podcasts,
+                        // App Icon
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher),
                             contentDescription = "App Logo",
                             modifier = Modifier
                                 .size(64.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                                .padding(12.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                .clip(CircleShape)
                         )
                         
                         Spacer(Modifier.height(16.dp))
