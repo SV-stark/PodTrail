@@ -82,7 +82,7 @@ abstract class PodcastDao {
     abstract suspend fun deleteEpisodesByPodcastId(podcastId: Long)
 
     @Transaction
-    suspend fun deletePodcast(podcastId: Long) {
+    open suspend fun deletePodcast(podcastId: Long) {
         deleteEpisodesByPodcastId(podcastId)
         deletePodcastById(podcastId)
     }
