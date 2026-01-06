@@ -168,6 +168,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun exportDatabase(uri: android.net.Uri): Boolean {
+        // ... (existing implementation)
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val db = PodcastDatabase.getInstance(context)
@@ -219,6 +220,54 @@ class SettingsRepository(private val context: Context) {
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
+            }
+        }
+    }
+
+    suspend fun exportOpml(uri: android.net.Uri): Boolean {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val db = PodcastDatabase.getInstance(context)
+                val dao = db.podcastDao()
+                val podcasts = dao.getAllPodcastsSync()
+                
+                val opmlManager = OpmlManager()
+                val opmlString = opmlManager.generateOpml(podcasts)
+                
+                context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(opmlString) }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
+
+    suspend fun importOpml(uri: android.net.Uri, podcastRepository: PodcastRepository): Int {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            var count = 0
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext 0
+                val opmlManager = OpmlManager()
+                val outlines = opmlManager.parseOpml(inputStream)
+                
+                // Get existing podcasts to skip
+                val existingPodcasts = podcastRepository.allPodcastsDirect()
+                val existingUrls = existingPodcasts.map { it.feedUrl }.toSet()
+                
+                outlines.forEach { outline ->
+                    if (!existingUrls.contains(outline.xmlUrl)) {
+                        // Add new podcast
+                        val result = podcastRepository.addPodcast(outline.xmlUrl)
+                        if (result.isSuccess) {
+                            count++
+                        }
+                    }
+                }
+                count
+            } catch (e: Exception) {
+                e.printStackTrace()
+                0
             }
         }
     }

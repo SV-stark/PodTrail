@@ -217,7 +217,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 if (showSettings) {
-                    com.stark.podtrail.ui.SettingsScreen(settingsRepo, appSettings, onBack = { showSettings = false })
+                    com.stark.podtrail.ui.SettingsScreen(settingsRepo, podcastRepository, appSettings, onBack = { showSettings = false })
                 } else if (selectedEpisode != null) {
                      // Fetch full episode details using a Flow to observe changes (like mark listened)
                      val fullEpisode by vm.getEpisodeFlow(selectedEpisode!!.id).collectAsState(initial = null)

@@ -25,12 +25,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.stark.podtrail.R
+
 import kotlinx.coroutines.launch
+
+import com.stark.podtrail.data.PodcastRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     repo: SettingsRepository,
+    podcastRepository: PodcastRepository,
     currentSettings: AppSettings,
     onBack: () -> Unit
 ) {
@@ -217,6 +221,48 @@ fun SettingsScreen(
                     subtitle = "Restore data (Overwrites current!)",
                     icon = Icons.Default.Download,
                     onClick = { importLauncher.launch("application/gzip") }
+                )
+            }
+
+            item {
+                val exportOpmlLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/x-opml+xml")
+                ) { uri ->
+                    if (uri != null) {
+                        scope.launch { 
+                            if (repo.exportOpml(uri)) {
+                                android.widget.Toast.makeText(context, "OPML Export Successful", android.widget.Toast.LENGTH_SHORT).show()
+                            } else {
+                                android.widget.Toast.makeText(context, "OPML Export Failed", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+                ClickablePreference(
+                    title = "Export OPML",
+                    subtitle = "Export subscriptions to generic OPML file",
+                    icon = Icons.Default.Share,
+                    onClick = { exportOpmlLauncher.launch("podtrail_subscriptions.opml") }
+                )
+            }
+
+            item {
+                val importOpmlLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+                ) { uri ->
+                    if (uri != null) {
+                        scope.launch {
+                             android.widget.Toast.makeText(context, "Importing OPML...", android.widget.Toast.LENGTH_SHORT).show()
+                             val count = repo.importOpml(uri, podcastRepository)
+                             android.widget.Toast.makeText(context, "Imported $count new podcasts", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                ClickablePreference(
+                    title = "Import OPML",
+                    subtitle = "Import subscriptions from OPML file",
+                    icon = Icons.Default.AddToPhotos,
+                    onClick = { importOpmlLauncher.launch(arrayOf("text/xml", "text/x-opml+xml", "application/xml")) }
                 )
             }
 
