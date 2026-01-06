@@ -69,6 +69,9 @@ abstract class PodcastDao {
     @Update
     abstract suspend fun updateEpisode(episode: Episode)
 
+    @Update
+    abstract suspend fun updatePodcast(podcast: Podcast)
+
     @Query("DELETE FROM podcasts")
     abstract suspend fun deleteAllPodcasts()
 

@@ -68,7 +68,22 @@ class PodcastRepository(private val dao: PodcastDao) {
         val podcasts = dao.getAllPodcasts().first().map { it.podcast }
         podcasts.forEach { podcast ->
             try {
-                val (_, episodes) = parser.fetchFeed(podcast.feedUrl)
+                val (mappedPodcast, episodes) = parser.fetchFeed(podcast.feedUrl)
+                
+                // Update podcast details if changed (e.g. image, title, description)
+                if (mappedPodcast != null) {
+                    val updatedPodcast = podcast.copy(
+                        title = mappedPodcast.title,
+                        imageUrl = mappedPodcast.imageUrl,
+                        description = mappedPodcast.description,
+                        primaryGenre = if (podcast.primaryGenre == "Uncategorized") mappedPodcast.genre ?: "Uncategorized" else podcast.primaryGenre
+                    )
+                    // Only update if something relevant successfully parsed and is different
+                    if (updatedPodcast != podcast) {
+                        dao.updatePodcast(updatedPodcast)
+                    }
+                }
+
                 val eps = episodes.map {
                      val safeDesc = it.description?.take(200)
                      Episode(
@@ -77,7 +92,7 @@ class PodcastRepository(private val dao: PodcastDao) {
                         guid = it.guid,
                         pubDate = it.pubDateMillis,
                         audioUrl = it.audioUrl,
-                        imageUrl = it.imageUrl ?: podcast.imageUrl,
+                        imageUrl = it.imageUrl ?: mappedPodcast?.imageUrl ?: podcast.imageUrl,
                         episodeNumber = it.episodeNumber,
                         durationMillis = it.durationMillis,
                         description = safeDesc

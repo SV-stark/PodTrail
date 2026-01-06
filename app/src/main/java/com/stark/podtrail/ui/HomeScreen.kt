@@ -36,7 +36,10 @@ fun HomeScreen(
     val continueListening = upNext.filter { it.playbackPosition > 0 }
     val onDeck = upNext.filter { it.playbackPosition == 0L }
 
-    if (podcasts.isEmpty()) {
+    val isRefreshing by vm.isRefreshing.collectAsState()
+    var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) }
+
+    if (podcasts.isEmpty() && !isRefreshing) {
         com.stark.podtrail.ui.EmptyState(
              icon = Icons.Default.PlayArrow,
              title = "Your library is empty",
@@ -48,6 +51,13 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+        // Refresh Indicator
+        if (isRefreshing) {
+            item {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+        }
+
         // 1. Continue Listening (Shelf)
         if (continueListening.isNotEmpty()) {
             item {
@@ -95,16 +105,77 @@ fun HomeScreen(
             )
         }
         
+        }
+        
         items(podcasts) { pStats ->
              PodcastCard(
                  podcast = pStats.podcast,
                  stats = pStats,
                  onClick = { onOpenPodcast(pStats.podcast) },
-                 onInfoClick = { /* Handle info click via callback if needed, or pass lambda */ }
+                 onInfoClick = { showInfoPodcast = pStats.podcast }
              )
         }
     }
+    
+    if (showInfoPodcast != null) {
+        PodcastInfoDialog(
+            podcast = showInfoPodcast!!,
+            onDismiss = { showInfoPodcast = null },
+            onToggleFavorite = { 
+                vm.toggleFavorite(showInfoPodcast!!.id, showInfoPodcast!!.isFavorite)
+                showInfoPodcast = showInfoPodcast!!.copy(isFavorite = !showInfoPodcast!!.isFavorite) // Optimistic update for dialog
+            }
+        )
+    }
 }
+}
+
+@Composable
+fun PodcastInfoDialog(
+    podcast: Podcast,
+    onDismiss: () -> Unit,
+    onToggleFavorite: () -> Unit
+) {
+    if (podcast.id == 0L) return // Sanity check
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = podcast.title, style = MaterialTheme.typography.titleMedium)
+        },
+        text = {
+            Column {
+                if (!podcast.imageUrl.isNullOrEmpty()) {
+                     AsyncImage(
+                        model = podcast.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                Text(
+                    text = podcast.description ?: "No description available.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                onToggleFavorite()
+            }) {
+                Text(if (podcast.isFavorite) "Unfavorite" else "Favorite")
+            }
+        }
+    )
 }
 
 @Composable
