@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.stark.podtrail.data.AppSettings
 import com.stark.podtrail.data.SettingsRepository
 import com.stark.podtrail.data.ThemeMode
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.stark.podtrail.R
