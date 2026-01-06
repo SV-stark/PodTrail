@@ -136,27 +136,42 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
             }
         }
 
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
         Scaffold(
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
                 if (selectedPodcast == null && selectedEpisode == null && !showSearch && !showSettings) {
-                    TopAppBar(
-                        title = { Text("PodTrack", style = MaterialTheme.typography.headlineMedium) },
+                    CenterAlignedTopAppBar(
+                        title = { 
+                            Text(
+                                "PodTrack", 
+                                style = MaterialTheme.typography.displaySmall, // Expressive typography
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            ) 
+                        },
                         actions = {
-                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
+                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onSurface) }
                              // Refresh button to fetch new episodes
                             val isRefreshing by vm.isRefreshing.collectAsState()
                             if (isRefreshing) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.padding(12.dp).size(24.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    color = MaterialTheme.colorScheme.primary,
                                     strokeWidth = 2.dp
                                 )
                             } else {
-                                IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh") }
+                                IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.onSurface) }
                             } 
-                            IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
+                            IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface) }
                         },
-                        colors = topAppBarColors
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            titleContentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        scrollBehavior = scrollBehavior
                     )
                 }
             },
@@ -516,48 +531,71 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOption by vm.sortOption.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
+    
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    Column {
-        TopAppBar(
-            title = { Text("Episodes") },
-            navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
-            },
-            actions = {
-                Box {
-                    IconButton(onClick = { showSortMenu = true }) {
-                        Icon(Icons.Default.Sort, contentDescription = "Sort")
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = { 
+                    Text(
+                        "Episodes",
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold 
+                    ) 
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { 
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back") 
                     }
-                    DropdownMenu(
-                        expanded = showSortMenu,
-                        onDismissRequest = { showSortMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Newest First") },
-                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_NEWEST); showSortMenu = false },
-                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_NEWEST) Icon(Icons.Default.Check, null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Oldest First") },
-                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_OLDEST); showSortMenu = false },
-                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_OLDEST) Icon(Icons.Default.Check, null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Shortest First") },
-                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_SHORTEST); showSortMenu = false },
-                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_SHORTEST) Icon(Icons.Default.Check, null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Longest First") },
-                            onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_LONGEST); showSortMenu = false },
-                            leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_LONGEST) Icon(Icons.Default.Check, null) }
-                        )
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showSortMenu = true }) {
+                            Icon(Icons.Default.Sort, contentDescription = "Sort")
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Newest First") },
+                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_NEWEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_NEWEST) Icon(Icons.Default.Check, null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Oldest First") },
+                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_OLDEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_OLDEST) Icon(Icons.Default.Check, null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Shortest First") },
+                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_SHORTEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_SHORTEST) Icon(Icons.Default.Check, null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Longest First") },
+                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_LONGEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_LONGEST) Icon(Icons.Default.Check, null) }
+                            )
+                        }
                     }
-                }
-            }
-        )
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            )
+        }
+    ) { paddingValues ->
         LazyColumn(
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(
+                top = paddingValues.calculateTopPadding() + 16.dp,
+                bottom = 16.dp,
+                start = 16.dp,
+                end = 16.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(episodes) { ep ->

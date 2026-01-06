@@ -86,6 +86,8 @@ fun PodTrailTheme(
     
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        shapes = Shapes,
+        typography = Typography,
         content = content
     )
 }
@@ -129,6 +131,8 @@ fun PodTrailTheme(
 
     MaterialTheme(
         colorScheme = finalScheme,
+        shapes = Shapes,
+        typography = Typography,
         content = content
     )
 }
