@@ -446,15 +446,20 @@ fun ProfileScreen(
                                 )
                                 var colorIndex = 0
                                 
+                                val gapAngle = 4f
                                 genreMap.entries.sortedByDescending { it.value }.forEach { entry ->
                                     val sweepAngle = (entry.value / total) * 360f
-                                    drawArc(
-                                        color = colors[colorIndex % colors.size],
-                                        startAngle = startAngle,
-                                        sweepAngle = sweepAngle,
-                                        useCenter = false,
-                                        style = Stroke(width = 30.dp.toPx(), cap = StrokeCap.Butt)
-                                    )
+                                    val drawSweep = if (totalPodcasts > 1) sweepAngle - gapAngle else sweepAngle
+                                    
+                                    if (drawSweep > 0) {
+                                        drawArc(
+                                            color = colors[colorIndex % colors.size],
+                                            startAngle = startAngle + (if (totalPodcasts > 1) gapAngle / 2 else 0f),
+                                            sweepAngle = drawSweep,
+                                            useCenter = false,
+                                            style = Stroke(width = 20.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                    }
                                     startAngle += sweepAngle
                                     colorIndex++
                                 }

@@ -65,6 +65,9 @@ class FeedParser {
                         description = parser.text
                     } else if (name.equals("itunes:category", ignoreCase = true) && genre == null) {
                         genre = parser.getAttributeValue(null, "text")
+                    } else if (name.equals("category", ignoreCase = true) && genre == null) {
+                        parser.next()
+                        genre = parser.text?.takeIf { it.isNotBlank() }
                     }
                 }
                  // naive stop if we have both, or break after first item... 
