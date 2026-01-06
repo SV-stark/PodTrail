@@ -57,7 +57,7 @@ class PodcastRepository(private val dao: PodcastDao) {
                     description = safeDesc
                 )
             }
-            dao.insertEpisodes(eps) // IGNORE on conflict
+            dao.upsertEpisodesMetadata(eps)
             Result.success(podcastId)
         } catch (e: Exception) {
             Result.failure(e)
@@ -83,7 +83,7 @@ class PodcastRepository(private val dao: PodcastDao) {
                         description = safeDesc
                     )
                 }
-                dao.insertEpisodes(eps)
+                dao.upsertEpisodesMetadata(eps)
             } catch (e: Exception) {
                 // Ignore failure for individual podcast refresh
                 e.printStackTrace()
@@ -213,9 +213,14 @@ class PodcastRepository(private val dao: PodcastDao) {
         try {
             val (_, episodes) = parser.fetchFeed(podcast.feedUrl)
             val match = episodes.find { (it.guid == episodeGuid) || (it.title == episodeGuid) } // guid fallback to title
-            match?.description
-        } catch (e: Exception) {
             null
+        }
+    }
+
+    suspend fun checkAndFixRestoringEpisodes() = withContext(Dispatchers.IO) {
+        val count = dao.getRestoringCount()
+        if (count > 0) {
+            refreshAllPodcasts()
         }
     }
 }

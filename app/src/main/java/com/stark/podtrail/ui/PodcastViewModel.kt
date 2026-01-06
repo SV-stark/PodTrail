@@ -203,6 +203,9 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         refreshUpNext()
+        viewModelScope.launch {
+            repo.checkAndFixRestoringEpisodes()
+        }
     }
 
     private fun refreshUpNext() {

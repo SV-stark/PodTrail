@@ -4,7 +4,7 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface PodcastDao {
+abstract class PodcastDao {
     @Transaction
     @Query("""
         SELECT 
@@ -16,67 +16,70 @@ interface PodcastDao {
         GROUP BY p.id
         ORDER BY p.title
     """)
-    fun getAllPodcasts(): Flow<List<PodcastWithStats>>
+    abstract fun getAllPodcasts(): Flow<List<PodcastWithStats>>
 
     @Query("SELECT * FROM podcasts WHERE isFavorite = 1")
-    fun getFavoritePodcasts(): Flow<List<Podcast>>
+    abstract fun getFavoritePodcasts(): Flow<List<Podcast>>
 
     @Query("UPDATE podcasts SET isFavorite = :isFavorite WHERE id = :id")
-    suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean)
+    abstract suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertPodcast(podcast: Podcast): Long
+    abstract suspend fun insertPodcast(podcast: Podcast): Long
 
     @Query("SELECT * FROM podcasts WHERE feedUrl = :feedUrl LIMIT 1")
-    suspend fun getPodcastByFeedUrl(feedUrl: String): Podcast?
+    abstract suspend fun getPodcastByFeedUrl(feedUrl: String): Podcast?
 
     @Query("SELECT * FROM podcasts WHERE id = :id LIMIT 1")
-    suspend fun getPodcastById(id: Long): Podcast?
+    abstract suspend fun getPodcastById(id: Long): Podcast?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertEpisodes(episodes: List<Episode>)
+    abstract suspend fun insertEpisodes(episodes: List<Episode>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertEpisode(episode: Episode): Long
 
     @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
-    fun getEpisodesForPodcast(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
+    abstract fun getEpisodesForPodcast(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
 
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
-    fun getEpisodesForPodcastLite(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
+    abstract fun getEpisodesForPodcastLite(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
-    fun getEpisodesForPodcastAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
+    abstract fun getEpisodesForPodcastAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
     
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
-    fun getEpisodesForPodcastLiteAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
+    abstract fun getEpisodesForPodcastLiteAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
-    fun getEpisodesForPodcastLiteDurationAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
+    abstract fun getEpisodesForPodcastLiteDurationAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
-    fun getEpisodesForPodcastLiteDurationDesc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
+    abstract fun getEpisodesForPodcastLiteDurationDesc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
     @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
-    fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>
+    abstract fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>
 
     @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
-    suspend fun getEpisodeById(episodeId: Long): Episode?
+    abstract suspend fun getEpisodeById(episodeId: Long): Episode?
 
     @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
-    fun getEpisodeByIdFlow(episodeId: Long): kotlinx.coroutines.flow.Flow<Episode?>
+    abstract fun getEpisodeByIdFlow(episodeId: Long): kotlinx.coroutines.flow.Flow<Episode?>
 
     @Update
-    suspend fun updateEpisode(episode: Episode)
+    abstract suspend fun updateEpisode(episode: Episode)
 
     @Query("DELETE FROM podcasts")
-    suspend fun deleteAllPodcasts()
+    abstract suspend fun deleteAllPodcasts()
 
     @Query("DELETE FROM episodes")
-    suspend fun deleteAllEpisodes()
+    abstract suspend fun deleteAllEpisodes()
 
     @Query("DELETE FROM podcasts WHERE id = :podcastId")
-    suspend fun deletePodcastById(podcastId: Long)
+    abstract suspend fun deletePodcastById(podcastId: Long)
 
     @Query("DELETE FROM episodes WHERE podcastId = :podcastId")
-    suspend fun deleteEpisodesByPodcastId(podcastId: Long)
+    abstract suspend fun deleteEpisodesByPodcastId(podcastId: Long)
 
     @Transaction
     suspend fun deletePodcast(podcastId: Long) {
@@ -85,25 +88,54 @@ interface PodcastDao {
     }
 
     @Query("SELECT SUM(durationMillis) FROM episodes WHERE listened = 1")
-    fun getTotalDurationListened(): Flow<Long?>
+    abstract fun getTotalDurationListened(): Flow<Long?>
 
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes ORDER BY pubDate DESC")
-    fun getAllEpisodesLite(): Flow<List<EpisodeListItem>>
+    abstract fun getAllEpisodesLite(): Flow<List<EpisodeListItem>>
 
     @Query("SELECT lastPlayedTimestamp FROM episodes WHERE lastPlayedTimestamp > 0 ORDER BY lastPlayedTimestamp DESC")
-    fun getAllLastPlayedTimestamps(): Flow<List<Long>>
+    abstract fun getAllLastPlayedTimestamps(): Flow<List<Long>>
 
     // --- Bulk Export/Import ---
 
     @Query("SELECT * FROM podcasts")
-    suspend fun getAllPodcastsSync(): List<Podcast>
+    abstract suspend fun getAllPodcastsSync(): List<Podcast>
 
     @Query("SELECT * FROM episodes")
-    suspend fun getAllEpisodesSync(): List<Episode>
+    abstract suspend fun getAllEpisodesSync(): List<Episode>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPodcasts(podcasts: List<Podcast>)
+    abstract suspend fun insertPodcasts(podcasts: List<Podcast>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAllEpisodes(episodes: List<Episode>)
+    abstract suspend fun insertAllEpisodes(episodes: List<Episode>)
+
+    @Query("SELECT * FROM episodes WHERE guid = :guid LIMIT 1")
+    abstract suspend fun getEpisodeByGuid(guid: String): Episode?
+
+    @Query("SELECT COUNT(*) FROM episodes WHERE title = 'Restoring...'")
+    abstract suspend fun getRestoringCount(): Int
+
+    @Transaction
+    open suspend fun upsertEpisodesMetadata(newEpisodes: List<Episode>) {
+        for (newEp in newEpisodes) {
+            val existing = getEpisodeByGuid(newEp.guid)
+            if (existing != null) {
+                // Update metadata, preserve playback state
+                val updated = existing.copy(
+                    title = newEp.title,
+                    pubDate = newEp.pubDate,
+                    audioUrl = newEp.audioUrl,
+                    imageUrl = newEp.imageUrl,
+                    episodeNumber = newEp.episodeNumber,
+                    durationMillis = newEp.durationMillis,
+                    description = newEp.description
+                    // listened, playbackPosition, lastPlayedTimestamp are from 'existing'
+                )
+                updateEpisode(updated)
+            } else {
+                insertEpisode(newEp)
+            }
+        }
+    }
 }
