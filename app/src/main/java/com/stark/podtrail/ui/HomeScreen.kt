@@ -215,7 +215,7 @@ fun ContinueListeningCard(episode: Episode, onClick: () -> Unit) {
 @Composable
 fun UpNextCard(episode: Episode, onClick: () -> Unit) {
      Card(
-        modifier = Modifier.width(160.dp).height(200.dp),
+        modifier = Modifier.width(160.dp).height(240.dp), // Increased height to prevent clipping
         shape = RoundedCornerShape(12.dp),
         onClick = onClick
     ) {
@@ -227,9 +227,32 @@ fun UpNextCard(episode: Episode, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop
             )
             Column(Modifier.padding(8.dp)) {
-                Text(episode.title, style = MaterialTheme.typography.labelMedium, maxLines = 2, minLines = 2)
+                Text(
+                    episode.title, 
+                    style = MaterialTheme.typography.labelMedium, 
+                    maxLines = 2, 
+                    minLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
                 Spacer(Modifier.height(4.dp))
-                Text(formatDate(episode.pubDate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        formatDate(episode.pubDate), 
+                        style = MaterialTheme.typography.labelSmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    if (episode.durationMillis != null && episode.durationMillis > 0) {
+                         Text(
+                            formatDuration(episode.durationMillis), 
+                            style = MaterialTheme.typography.labelSmall, 
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
