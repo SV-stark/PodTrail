@@ -645,6 +645,8 @@ fun TopPodcastsList(podcasts: List<PodcastWithStats>) {
     }
 }
 
+@Composable
+fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleLarge,

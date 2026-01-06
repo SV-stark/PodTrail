@@ -1,7 +1,6 @@
 package com.stark.podtrail.data
 
 import androidx.room.Entity
-import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Embedded
 
