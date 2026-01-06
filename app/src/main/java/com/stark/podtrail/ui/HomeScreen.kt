@@ -16,6 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.foundation.clickable
 import com.stark.podtrail.PodcastCard
 import com.stark.podtrail.data.PodcastWithStats
@@ -168,10 +170,14 @@ fun PodcastInfoDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = {
+            IconButton(onClick = {
                 onToggleFavorite()
             }) {
-                Text(if (podcast.isFavorite) "Unfavorite" else "Favorite")
+                Icon(
+                    imageVector = if (podcast.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (podcast.isFavorite) "Unfavorite" else "Favorite",
+                    tint = if (podcast.isFavorite) androidx.compose.ui.graphics.Color.Red else LocalContentColor.current
+                )
             }
         }
     )
