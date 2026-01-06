@@ -72,8 +72,8 @@ class PodcastRepository(private val dao: PodcastDao) {
                 
                 // Update podcast details if changed (e.g. image, title, description)
                 if (mappedPodcast != null) {
-                    val updatedPodcast = podcast.copy(
-                        title = mappedPodcast.title,
+                     val updatedPodcast = podcast.copy(
+                        title = mappedPodcast.title ?: podcast.title,
                         imageUrl = mappedPodcast.imageUrl,
                         description = mappedPodcast.description,
                         primaryGenre = if (podcast.primaryGenre == "Uncategorized") mappedPodcast.genre ?: "Uncategorized" else podcast.primaryGenre

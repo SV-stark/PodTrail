@@ -105,7 +105,6 @@ fun HomeScreen(
             )
         }
         
-        }
         
         items(podcasts) { pStats ->
              PodcastCard(
