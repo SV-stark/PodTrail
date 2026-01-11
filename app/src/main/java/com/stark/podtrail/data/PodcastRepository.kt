@@ -257,6 +257,11 @@ class PodcastRepository(private val dao: PodcastDao) {
         dao.deletePodcast(podcastId)
     }
 
+    suspend fun markPodcastListened(podcastId: Long, listened: Boolean) {
+        val timestamp = if (listened) System.currentTimeMillis() else 0L
+        dao.markPodcastEpisodesListened(podcastId, listened, timestamp)
+    }
+
     suspend fun fetchRemoteEpisodeDescription(podcastId: Long, episodeGuid: String): String? = withContext(Dispatchers.IO) {
         val podcast = dao.getPodcastById(podcastId) ?: return@withContext null
         try {

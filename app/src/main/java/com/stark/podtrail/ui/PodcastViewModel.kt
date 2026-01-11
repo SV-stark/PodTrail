@@ -73,8 +73,23 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     private val _discoverTitle = kotlinx.coroutines.flow.MutableStateFlow("Top Podcasts")
     val discoverTitle = _discoverTitle.stateIn(viewModelScope, SharingStarted.Lazily, "Top Podcasts")
 
+    private var selectedGenreId: Long? = null
+
+    fun selectDiscoverGenre(genreId: Long?, genreName: String?) {
+        selectedGenreId = genreId
+        refreshDiscover()
+    }
+
     fun refreshDiscover() {
         viewModelScope.launch {
+            if (selectedGenreId != null) {
+                // Determine title implicitly or passed?
+                // For now, if genre is selected, we assume title is handled by UI or we can set it here if we had the name.
+                // But let's just use what we have.
+                 _discoverPodcasts.value = searcher.getTopPodcasts(genreId = selectedGenreId)
+                 return@launch
+            }
+
             // Logic: Pick a random podcast from user's library, find its genre, and get top charts for that genre.
             // If empty, get generic top podcasts.
             val localPodcasts = repo.allPodcastsDirect()
@@ -224,6 +239,14 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     fun deletePodcast(podcastId: Long) {
         viewModelScope.launch {
             repo.deletePodcast(podcastId)
+        }
+    }
+
+    fun markPodcastListened(podcastId: Long, listened: Boolean) {
+        viewModelScope.launch {
+            repo.markPodcastListened(podcastId, listened)
+            refreshAllPodcasts() // to update stats
+            refreshUpNext()
         }
     }
 

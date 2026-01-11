@@ -21,6 +21,13 @@ import com.stark.podtrail.data.Podcast
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.HorizontalDivider
 import com.stark.podtrail.ui.PodcastViewModel
 import com.stark.podtrail.ui.ProfileScreen
 import com.stark.podtrail.ui.theme.PodTrailTheme
@@ -101,6 +108,8 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     val context = LocalContext.current
     val settingsRepo = remember { com.stark.podtrail.data.SettingsRepository(context) }
@@ -116,8 +125,23 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var selectedEpisode by remember { mutableStateOf<com.stark.podtrail.data.EpisodeListItem?>(null) }
     
-    // 0 = Home, 1 = Discover, 2 = Profile
+    // Podcast Info Screen State
+    var selectedPodcastInfo by remember { mutableStateOf<Podcast?>(null) }
+    val podcastListState = androidx.compose.foundation.lazy.LazyListState() // Hoisted state for Home
+    val episodeListState = remember { androidx.compose.foundation.lazy.LazyListState() } // Hoisted for Episode List
+
+    // Reset scroll when podcast changes
+    LaunchedEffect(selectedPodcast?.id) {
+        episodeListState.scrollToItem(0)
+    }
+    
+    // 0 = Home, 1 = Discover, 2 = Profile (Calendar removed from bottom bar, moved to drawer?)
+    // Plan: Home, Discover, Calendar, Profile in Drawer. Bottom Bar optional or synced?
+    // Let's keep Bottom Bar for main nav, Drawer for utils/extra.
     var selectedTab by remember { mutableIntStateOf(0) }
+    
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     com.stark.podtrail.ui.theme.PodTrailTheme(
         darkTheme = when(appSettings.themeMode) {
@@ -139,8 +163,10 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
         // Handle Back Press
         androidx.activity.compose.BackHandler(enabled = true) {
             when {
+                drawerState.isOpen -> scope.launch { drawerState.close() }
                 showSettings -> showSettings = false
                 selectedEpisode != null -> selectedEpisode = null
+                selectedPodcastInfo != null -> selectedPodcastInfo = null
                 showSearch -> showSearch = false
                 selectedPodcast != null -> selectedPodcast = null
                 else -> context.findActivity()?.finish()
@@ -149,126 +175,169 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
 
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-        Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                if (selectedPodcast == null && selectedEpisode == null && !showSearch && !showSettings) {
-                    CenterAlignedTopAppBar(
-                        title = { 
-                            Text(
-                                "PodTrack", 
-                                style = MaterialTheme.typography.displaySmall, // Expressive typography
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                            ) 
-                        },
-                        actions = {
-                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onSurface) }
-                             // Refresh button to fetch new episodes
-                            val isRefreshing by vm.isRefreshing.collectAsState()
-                            if (isRefreshing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.padding(12.dp).size(24.dp),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.onSurface) }
-                            } 
-                            IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface) }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            titleContentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        scrollBehavior = scrollBehavior
-                    )
-                }
-            },
-            bottomBar = {
-                if (selectedPodcast == null && selectedEpisode == null && !showSearch && !showSettings) {
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 8.dp
-                    ) {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                            label = { Text("HOME") },
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.Explore, contentDescription = "Discover") },
-                            label = { Text("DISCOVER") },
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") },
-                            label = { Text("CALENDAR") },
-                            selected = selectedTab == 2,
-                            onClick = { selectedTab = 2 }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                            label = { Text("PROFILE") },
-                            selected = selectedTab == 3,
-                            onClick = { selectedTab = 3 }
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                com.stark.podtrail.ui.SidebarDrawer(
+                    onNavigate = { 
+                        selectedTab = it
+                        // Close other "screens"
+                        selectedPodcast = null
+                        selectedEpisode = null
+                        selectedPodcastInfo = null
+                        showSearch = false
+                        showSettings = false
+                    },
+                    onClose = { scope.launch { drawerState.close() } },
+                    onSettings = { showSettings = true }
+                )
+            }
+        ) {
+            Scaffold(
+                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                topBar = {
+                    // Hide TopBar if on specific full screens like Settings or PodcastInfo or EpisodeDetail
+                    // But we want it for Home/Discover logic.
+                    // Actually, PodcastInfo has its own internal back button in my design? 
+                    // No, I put Scaffold in PodcastInfoScreen. So we should hide this one.
+                    val hideMainTopBar = showSettings || selectedPodcastInfo != null || selectedEpisode != null
+                    
+                    if (!hideMainTopBar) {
+                        CenterAlignedTopAppBar(
+                            title = { 
+                                Text(
+                                    when(selectedTab) {
+                                        0 -> "PodTrack"
+                                        1 -> "Discover"
+                                        2 -> "Calendar"
+                                        3 -> "Profile"
+                                        else -> "PodTrack"
+                                    }, 
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                ) 
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                }
+                            },
+                            actions = {
+                                if (selectedTab == 0 && selectedPodcast == null) {
+                                    IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Add, contentDescription = "Add") }
+                                     // Refresh button
+                                    val isRefreshing by vm.isRefreshing.collectAsState()
+                                    if (isRefreshing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.padding(12.dp).size(24.dp),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        IconButton(onClick = { vm.refreshAllPodcasts() }) { Icon(Icons.Default.Refresh, contentDescription = "Refresh") }
+                                    } 
+                                }
+                            },
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            ),
+                            scrollBehavior = scrollBehavior
                         )
                     }
+                },
+                bottomBar = {
+                    val hideBottomBar = showSettings || selectedPodcastInfo != null || selectedEpisode != null || selectedPodcast != null || showSearch
+                    if (!hideBottomBar) {
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 8.dp
+                        ) {
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                                label = { Text("Home") },
+                                selected = selectedTab == 0,
+                                onClick = { selectedTab = 0 }
+                            )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Explore, contentDescription = "Discover") },
+                                label = { Text("Discover") },
+                                selected = selectedTab == 1,
+                                onClick = { selectedTab = 1 }
+                            )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.DateRange, contentDescription = "Calendar") },
+                                label = { Text("Calendar") },
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 }
+                            )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                                label = { Text("Profile") },
+                                selected = selectedTab == 3,
+                                onClick = { selectedTab = 3 }
+                            )
+                        }
+                    }
                 }
-            }
-        ) { padding ->
-            Box(Modifier.padding(padding)) {
-                if (showSettings) {
-                    com.stark.podtrail.ui.SettingsScreen(settingsRepo, podcastRepository, appSettings, onBack = { showSettings = false })
-                } else if (selectedEpisode != null) {
-                     // Fetch full episode details using a Flow to observe changes (like mark listened)
-                     val fullEpisode by vm.getEpisodeFlow(selectedEpisode!!.id).collectAsState(initial = null)
-                     
-                     // Trigger update description once when we open
-                     LaunchedEffect(selectedEpisode!!.id) {
-                         vm.fetchAndUpdateDescription(selectedEpisode!!.id)
-                     }
-                     
-                     if (fullEpisode != null) {
-                        EpisodeDetailScreen(episode = fullEpisode!!, vm = vm, onClose = { selectedEpisode = null })
-                     } else {
-                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                     }
-                } else if (showSearch) {
-                    SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
-                } else if (selectedPodcast != null) {
-                    EpisodeListScreen(vm, selectedPodcast!!.id,
-                        onBack = { selectedPodcast = null },
-                        onDetails = { ep -> selectedEpisode = ep }
-                    )
-                } else {
-                    // Main Tabs
-                    when (selectedTab) {
-                        0 -> com.stark.podtrail.ui.HomeScreen(
-                            vm, 
-                            onOpenPodcast = { podcast -> selectedPodcast = podcast },
-                            onOpenEpisode = { episode -> 
-                                selectedEpisode = com.stark.podtrail.data.EpisodeListItem(
-                                    id = episode.id,
-                                    podcastId = episode.podcastId,
-                                    title = episode.title,
-                                    pubDate = episode.pubDate,
-                                    imageUrl = episode.imageUrl,
-                                    episodeNumber = episode.episodeNumber,
-                                    durationMillis = episode.durationMillis,
-                                    listened = episode.listened,
-                                    listenedAt = episode.listenedAt,
-                                    playbackPosition = episode.playbackPosition,
-                                    lastPlayedTimestamp = episode.lastPlayedTimestamp
-                                )
-                            }
+            ) { padding ->
+                Box(Modifier.padding(padding)) {
+                    if (showSettings) {
+                        com.stark.podtrail.ui.SettingsScreen(settingsRepo, podcastRepository, appSettings, onBack = { showSettings = false })
+                    } else if (selectedPodcastInfo != null) {
+                         // Find the stats for this podcast
+                         val podcasts by vm.podcasts.collectAsState()
+                         val pStats = podcasts.find { it.podcast.id == selectedPodcastInfo!!.id }
+                         com.stark.podtrail.ui.PodcastInfoScreen(
+                             podcast = selectedPodcastInfo!!,
+                             stats = pStats,
+                             vm = vm,
+                             onBack = { selectedPodcastInfo = null }
+                         )
+                    } else if (selectedEpisode != null) {
+                         val fullEpisode by vm.getEpisodeFlow(selectedEpisode!!.id).collectAsState(initial = null)
+                         LaunchedEffect(selectedEpisode!!.id) { vm.fetchAndUpdateDescription(selectedEpisode!!.id) }
+                         
+                         if (fullEpisode != null) {
+                            EpisodeDetailScreen(episode = fullEpisode!!, vm = vm, onClose = { selectedEpisode = null })
+                         } else {
+                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                         }
+                    } else if (showSearch) {
+                        SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
+                    } else if (selectedPodcast != null) {
+                        EpisodeListScreen(vm, selectedPodcast!!.id,
+                            listState = episodeListState,
+                            onBack = { selectedPodcast = null },
+                            onDetails = { ep -> selectedEpisode = ep }
                         )
-                        1 -> DiscoverScreen(vm)
-                        2 -> com.stark.podtrail.ui.CalendarScreen(vm, onEpisodeClick = { ep -> selectedEpisode = ep })
-                        3 -> ProfileScreen(vm, settingsRepo, appSettings)
+                    } else {
+                        // Main Tabs
+                        when (selectedTab) {
+                            0 -> com.stark.podtrail.ui.HomeScreen(
+                                vm, 
+                                onOpenPodcast = { podcast -> selectedPodcast = podcast },
+                                onOpenEpisode = { episode -> 
+                                    selectedEpisode = com.stark.podtrail.data.EpisodeListItem(
+                                        id = episode.id,
+                                        podcastId = episode.podcastId,
+                                        title = episode.title,
+                                        pubDate = episode.pubDate,
+                                        imageUrl = episode.imageUrl,
+                                        episodeNumber = episode.episodeNumber,
+                                        durationMillis = episode.durationMillis,
+                                        listened = episode.listened,
+                                        listenedAt = episode.listenedAt,
+                                        playbackPosition = episode.playbackPosition,
+                                        lastPlayedTimestamp = episode.lastPlayedTimestamp
+                                    )
+                                },
+                                onOpenPodcastInfo = { p -> selectedPodcastInfo = p }
+                            )
+                            1 -> DiscoverScreen(vm)
+                            2 -> com.stark.podtrail.ui.CalendarScreen(vm, onEpisodeClick = { ep -> selectedEpisode = ep })
+                            3 -> ProfileScreen(vm, settingsRepo, appSettings)
+                        }
                     }
                 }
             }
@@ -391,51 +460,8 @@ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () ->
 }
 
 @Composable
-fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
+fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit, onInfo: (Podcast) -> Unit) {
     val podcasts by vm.podcasts.collectAsState()
-    var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) }
-
-    if (showInfoPodcast != null) {
-        val p = showInfoPodcast!!
-        AlertDialog(
-            onDismissRequest = { showInfoPodcast = null },
-            title = { Text(p.title) },
-            text = {
-                Column {
-                    if (!p.description.isNullOrBlank()) {
-                         // Simple HTML decoding
-                        val decoded = try {
-                            android.text.Html.fromHtml(p.description, android.text.Html.FROM_HTML_MODE_COMPACT).toString()
-                        } catch (e: Exception) { p.description }
-                        Text(decoded, modifier = Modifier.verticalScroll(rememberScrollState()).heightIn(max = 200.dp))
-                    } else {
-                        Text("No description available.")
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showInfoPodcast = null }) { Text("Close") }
-            },
-            dismissButton = {
-                Row {
-                    IconButton(onClick = { vm.toggleFavorite(p.id, p.isFavorite) }) {
-                        Icon(
-                            if (p.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (p.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        )
-                    }
-                    TextButton(
-                        onClick = {
-                            vm.deletePodcast(p.id)
-                            showInfoPodcast = null
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) { Text("Remove Podcast") }
-                }
-            }
-        )
-    }
 
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -443,7 +469,7 @@ fun PodcastListScreen(vm: PodcastViewModel, onOpen: (Podcast) -> Unit) {
     ) {
         items(podcasts) { pStats ->
             val p = pStats.podcast
-            PodcastCard(p, pStats, onClick = { onOpen(p) }, onInfoClick = { showInfoPodcast = p })
+            PodcastCard(p, pStats, onClick = { onOpen(p) }, onInfoClick = { onInfo(p) })
         }
     }
 }
@@ -538,7 +564,13 @@ fun PodcastCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit, onDetails: (com.stark.podtrail.data.EpisodeListItem) -> Unit) {
+fun EpisodeListScreen(
+    vm: PodcastViewModel, 
+    podcastId: Long, 
+    listState: androidx.compose.foundation.lazy.LazyListState, 
+    onBack: () -> Unit, 
+    onDetails: (com.stark.podtrail.data.EpisodeListItem) -> Unit
+) {
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOption by vm.sortOption.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
@@ -614,6 +646,16 @@ fun EpisodeListScreen(vm: PodcastViewModel, podcastId: Long, onBack: () -> Unit,
         }
     ) { paddingValues ->
         LazyColumn(
+            contentPadding = PaddingValues(
+                top = paddingValues.calculateTopPadding() + 16.dp,
+                bottom = 16.dp,
+                start = 16.dp,
+                end = 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) { paddingValues ->
+        LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(
                 top = paddingValues.calculateTopPadding() + 16.dp,
                 bottom = 16.dp,
@@ -851,8 +893,24 @@ fun DiscoverScreen(vm: PodcastViewModel) {
     
     var showPreviewPodcast by remember { mutableStateOf<com.stark.podtrail.network.SearchResult?>(null) }
     
+    // Genres
+    val genres = remember {
+        listOf(
+            "Top" to null,
+            "Comedy" to 1303L,
+            "News" to 1489L,
+            "Tech" to 1310L,
+            "True Crime" to 1488L,
+            "History" to 1487L,
+            "Science" to 1315L,
+            "Business" to 1321L
+        )
+    }
+    
+    var selectedGenreIndex by remember { mutableIntStateOf(0) }
+
     LaunchedEffect(Unit) {
-        vm.refreshDiscover()
+        if (discoverPodcasts.isEmpty()) vm.refreshDiscover() // loads default
     }
 
     if (showPreviewPodcast != null) {
@@ -891,13 +949,41 @@ fun DiscoverScreen(vm: PodcastViewModel) {
         )
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 16.dp))
+    Column(Modifier.fillMaxSize()) {
+        Text("Discover", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(16.dp))
+        
+        // Genre Chips
+        androidx.compose.foundation.lazy.LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(genres.size) { index ->
+                val (name, id) = genres[index]
+                FilterChip(
+                    selected = selectedGenreIndex == index,
+                    onClick = {
+                        selectedGenreIndex = index
+                        vm.selectDiscoverGenre(id, name)
+                    },
+                    label = { Text(name) },
+                    leadingIcon = if (selectedGenreIndex == index) {
+                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                    } else null
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
+        
+        Spacer(Modifier.height(8.dp))
         
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 140.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp)
         ) {
             items(discoverPodcasts) { podcast ->
                 Card(

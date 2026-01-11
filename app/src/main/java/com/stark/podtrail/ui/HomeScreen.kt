@@ -33,7 +33,8 @@ import com.stark.podtrail.data.PodcastWithStats
 fun HomeScreen(
     vm: PodcastViewModel, 
     onOpenPodcast: (Podcast) -> Unit,
-    onOpenEpisode: (Episode) -> Unit
+    onOpenEpisode: (Episode) -> Unit,
+    onOpenPodcastInfo: (Podcast) -> Unit
 ) {
     val podcasts by vm.podcasts.collectAsState()
     val upNext by vm.upNext.collectAsState()
@@ -46,7 +47,7 @@ fun HomeScreen(
     val onDeck = upNext.filter { it.playbackPosition == 0L }
 
     val isRefreshing by vm.isRefreshing.collectAsState()
-    var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) }
+    // var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) } // Removed local state
     var isGridView by rememberSaveable { mutableStateOf(false) }
 
     if (podcasts.isEmpty() && !isRefreshing) {
@@ -159,23 +160,13 @@ fun HomeScreen(
                      podcast = pStats.podcast,
                      stats = pStats,
                      onClick = { onOpenPodcast(pStats.podcast) },
-                     onInfoClick = { showInfoPodcast = pStats.podcast }
+                     onInfoClick = { onOpenPodcastInfo(pStats.podcast) }
                  )
             }
         }
     }
     
-    if (showInfoPodcast != null) {
-        PodcastInfoDialog(
-            podcast = showInfoPodcast!!,
-            onDismiss = { showInfoPodcast = null },
-            onToggleFavorite = { 
-                vm.toggleFavorite(showInfoPodcast!!.id, showInfoPodcast!!.isFavorite)
-                showInfoPodcast = showInfoPodcast!!.copy(isFavorite = !showInfoPodcast!!.isFavorite) // Optimistic update for dialog
-            }
-        )
-    }
-}
+    // Removed PodcastInfoDialog call
 }
 
 @Composable

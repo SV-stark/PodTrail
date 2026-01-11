@@ -25,6 +25,9 @@ abstract class PodcastDao {
     @Query("UPDATE podcasts SET isFavorite = :isFavorite WHERE id = :id")
     abstract suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean)
 
+    @Query("UPDATE episodes SET listened = :listened, listenedAt = :timestamp WHERE podcastId = :podcastId")
+    abstract suspend fun markPodcastEpisodesListened(podcastId: Long, listened: Boolean, timestamp: Long)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertPodcast(podcast: Podcast): Long
 
