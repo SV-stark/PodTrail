@@ -127,13 +127,6 @@ fun PodcastInfoScreen(
                         overflow = TextOverflow.Ellipsis,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                    if (!podcast.author.isNullOrBlank()) {
-                        Text(
-                            podcast.author,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
 
@@ -152,8 +145,9 @@ fun PodcastInfoScreen(
                         subtext = "${(stats.listenedEpisodes.toFloat() / stats.totalEpisodes.toFloat() * 100).toInt()}%"
                     )
                     
-                    val hours = stats.timeListened / 1000 / 3600
-                    val minutes = (stats.timeListened / 1000 % 3600) / 60
+                    val totalMillis = stats.timeListened ?: 0L
+                    valhours = totalMillis / 1000 / 3600
+                    val minutes = (totalMillis / 1000 % 3600) / 60
                     
                     StatCard(
                         modifier = Modifier.weight(1f),

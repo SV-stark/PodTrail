@@ -167,6 +167,7 @@ fun HomeScreen(
     }
     
     // Removed PodcastInfoDialog call
+    }
 }
 
 @Composable
