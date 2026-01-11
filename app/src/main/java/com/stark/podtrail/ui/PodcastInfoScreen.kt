@@ -146,7 +146,7 @@ fun PodcastInfoScreen(
                     )
                     
                     val totalMillis = stats.timeListened ?: 0L
-                    valhours = totalMillis / 1000 / 3600
+                    val hours = totalMillis / 1000 / 3600
                     val minutes = (totalMillis / 1000 % 3600) / 60
                     
                     StatCard(

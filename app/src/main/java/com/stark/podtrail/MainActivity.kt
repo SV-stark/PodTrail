@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.ArrowBack
@@ -108,7 +109,6 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     val context = LocalContext.current
