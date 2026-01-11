@@ -109,7 +109,6 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Composable
 fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     val context = LocalContext.current
     val settingsRepo = remember { com.stark.podtrail.data.SettingsRepository(context) }
