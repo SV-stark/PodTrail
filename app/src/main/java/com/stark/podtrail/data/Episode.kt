@@ -6,7 +6,11 @@ import androidx.room.Index
 
 @Entity(
     tableName = "episodes",
-    indices = [Index(value = ["guid"], unique = true)]
+    indices = [
+        Index(value = ["guid"], unique = true),
+        Index(value = ["podcastId"]),
+        Index(value = ["listened", "lastPlayedTimestamp"])
+    ]
 )
 data class Episode(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

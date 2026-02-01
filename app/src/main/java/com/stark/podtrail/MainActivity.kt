@@ -47,14 +47,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-
 import kotlinx.coroutines.isActive
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -345,37 +342,61 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
 }
 
 
+private fun isValidUrl(url: String): Boolean {
+    return url.startsWith("http://", ignoreCase = true) || 
+           url.startsWith("https://", ignoreCase = true)
+}
+
 @Composable
 fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val results by vm.searchResults.collectAsState()
     var showUrlDialog by remember { mutableStateOf(false) }
     var directUrl by remember { mutableStateOf("") }
+    var urlError by remember { mutableStateOf<String?>(null) }
 
     if (showUrlDialog) {
         AlertDialog(
-            onDismissRequest = { showUrlDialog = false },
+            onDismissRequest = { 
+                showUrlDialog = false 
+                urlError = null
+            },
             title = { Text("Add by URL") },
             text = {
-                OutlinedTextField(
-                    value = directUrl,
-                    onValueChange = { directUrl = it },
-                    label = { Text("Feed URL") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    OutlinedTextField(
+                        value = directUrl,
+                        onValueChange = { 
+                            directUrl = it 
+                            urlError = null
+                        },
+                        label = { Text("Feed URL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = urlError != null,
+                        supportingText = urlError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } }
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (directUrl.isNotBlank()) {
+                    if (directUrl.isBlank()) {
+                        urlError = "URL cannot be empty"
+                    } else if (!isValidUrl(directUrl)) {
+                        urlError = "URL must start with http:// or https://"
+                    } else {
                         vm.addPodcast(directUrl, null) { }
                         onPodcastAdded()
                         showUrlDialog = false
+                        urlError = null
                     }
                 }) { Text("Add") }
             },
             dismissButton = {
-                TextButton(onClick = { showUrlDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { 
+                    showUrlDialog = false 
+                    urlError = null
+                }) { Text("Cancel") }
             }
         )
     }

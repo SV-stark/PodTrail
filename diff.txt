@@ -1,0 +1,262 @@
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 371a5a4..018ce17 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -20,7 +20,8 @@ android {
+ 
+     buildTypes {
+         release {
+-            isMinifyEnabled = false
++            isMinifyEnabled = true
++            isShrinkResources = true
+             proguardFiles(
+                 getDefaultProguardFile("proguard-android-optimize.txt"), 
+                 "proguard-rules.pro"
+diff --git a/app/src/main/java/com/stark/podtrail/MainActivity.kt b/app/src/main/java/com/stark/podtrail/MainActivity.kt
+index ed64a79..2a71587 100644
+--- a/app/src/main/java/com/stark/podtrail/MainActivity.kt
++++ b/app/src/main/java/com/stark/podtrail/MainActivity.kt
+@@ -47,14 +47,11 @@ import kotlinx.coroutines.delay
+ import kotlinx.coroutines.launch
+ import androidx.compose.material.icons.filled.Search
+ import androidx.compose.material.icons.filled.Link
+-import androidx.compose.material.icons.filled.ArrowBack
+ import androidx.compose.material.icons.filled.Podcasts
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.layout.ContentScale
+ import androidx.compose.foundation.shape.RoundedCornerShape
+-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+-
+ import kotlinx.coroutines.isActive
+ import androidx.compose.runtime.LaunchedEffect
+ import androidx.compose.ui.layout.onGloballyPositioned
+@@ -345,37 +342,61 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
+ }
+ 
+ 
++private fun isValidUrl(url: String): Boolean {
++    return url.startsWith("http://", ignoreCase = true) || 
++           url.startsWith("https://", ignoreCase = true)
++}
++
+ @Composable
+ fun SearchScreen(vm: PodcastViewModel, onBack: () -> Unit, onPodcastAdded: () -> Unit) {
+     var query by remember { mutableStateOf("") }
+     val results by vm.searchResults.collectAsState()
+     var showUrlDialog by remember { mutableStateOf(false) }
+     var directUrl by remember { mutableStateOf("") }
++    var urlError by remember { mutableStateOf<String?>(null) }
+ 
+     if (showUrlDialog) {
+         AlertDialog(
+-            onDismissRequest = { showUrlDialog = false },
++            onDismissRequest = { 
++                showUrlDialog = false 
++                urlError = null
++            },
+             title = { Text("Add by URL") },
+             text = {
+-                OutlinedTextField(
+-                    value = directUrl,
+-                    onValueChange = { directUrl = it },
+-                    label = { Text("Feed URL") },
+-                    singleLine = true,
+-                    modifier = Modifier.fillMaxWidth()
+-                )
++                Column {
++                    OutlinedTextField(
++                        value = directUrl,
++                        onValueChange = { 
++                            directUrl = it 
++                            urlError = null
++                        },
++                        label = { Text("Feed URL") },
++                        singleLine = true,
++                        modifier = Modifier.fillMaxWidth(),
++                        isError = urlError != null,
++                        supportingText = urlError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } }
++                    )
++                }
+             },
+             confirmButton = {
+                 TextButton(onClick = {
+-                    if (directUrl.isNotBlank()) {
++                    if (directUrl.isBlank()) {
++                        urlError = "URL cannot be empty"
++                    } else if (!isValidUrl(directUrl)) {
++                        urlError = "URL must start with http:// or https://"
++                    } else {
+                         vm.addPodcast(directUrl, null) { }
+                         onPodcastAdded()
+                         showUrlDialog = false
++                        urlError = null
+                     }
+                 }) { Text("Add") }
+             },
+             dismissButton = {
+-                TextButton(onClick = { showUrlDialog = false }) { Text("Cancel") }
++                TextButton(onClick = { 
++                    showUrlDialog = false 
++                    urlError = null
++                }) { Text("Cancel") }
+             }
+         )
+     }
+diff --git a/app/src/main/java/com/stark/podtrail/data/Episode.kt b/app/src/main/java/com/stark/podtrail/data/Episode.kt
+index 0ddfdb9..a7cf341 100644
+--- a/app/src/main/java/com/stark/podtrail/data/Episode.kt
++++ b/app/src/main/java/com/stark/podtrail/data/Episode.kt
+@@ -6,7 +6,11 @@ import androidx.room.Index
+ 
+ @Entity(
+     tableName = "episodes",
+-    indices = [Index(value = ["guid"], unique = true)]
++    indices = [
++        Index(value = ["guid"], unique = true),
++        Index(value = ["podcastId"]),
++        Index(value = ["listened", "lastPlayedTimestamp"])
++    ]
+ )
+ data class Episode(
+     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+diff --git a/app/src/main/java/com/stark/podtrail/data/PodcastDatabase.kt b/app/src/main/java/com/stark/podtrail/data/PodcastDatabase.kt
+index 9965401..b4ea92b 100644
+--- a/app/src/main/java/com/stark/podtrail/data/PodcastDatabase.kt
++++ b/app/src/main/java/com/stark/podtrail/data/PodcastDatabase.kt
+@@ -5,7 +5,7 @@ import androidx.room.Database
+ import androidx.room.Room
+ import androidx.room.RoomDatabase
+ 
+-@Database(entities = [Podcast::class, Episode::class], version = 7, exportSchema = false)
++@Database(entities = [Podcast::class, Episode::class], version = 8, exportSchema = false)
+ abstract class PodcastDatabase : RoomDatabase() {
+     abstract fun podcastDao(): PodcastDao
+ 
+@@ -18,8 +18,7 @@ abstract class PodcastDatabase : RoomDatabase() {
+                     PodcastDatabase::class.java,
+                     "podtrack.db"
+                 )
+-                .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
+-                .fallbackToDestructiveMigration(true)
++                .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                 .build().also { INSTANCE = it }
+             }
+ 
+@@ -50,3 +49,11 @@ val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
+         db.execSQL("ALTER TABLE podcasts ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0")
+     }
+ }
++
++val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
++    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
++        // Add indices for podcastId and listened/lastPlayedTimestamp
++        db.execSQL("CREATE INDEX IF NOT EXISTS index_episodes_podcastId ON episodes(podcastId)")
++        db.execSQL("CREATE INDEX IF NOT EXISTS index_episodes_listened_lastPlayedTimestamp ON episodes(listened, lastPlayedTimestamp)")
++    }
++}
+diff --git a/app/src/main/java/com/stark/podtrail/network/FeedParser.kt b/app/src/main/java/com/stark/podtrail/network/FeedParser.kt
+index 4aacf5e..577aa67 100644
+--- a/app/src/main/java/com/stark/podtrail/network/FeedParser.kt
++++ b/app/src/main/java/com/stark/podtrail/network/FeedParser.kt
+@@ -7,6 +7,8 @@ import org.xmlpull.v1.XmlPullParserFactory
+ import java.io.StringReader
+ import java.text.SimpleDateFormat
+ import java.util.*
++import java.util.concurrent.TimeUnit
++import android.util.Log
+ 
+ data class ParsedEpisode(
+     val title: String,
+@@ -27,16 +29,28 @@ data class ParsedPodcast(
+ )
+ 
+ class FeedParser {
+-    private val client = OkHttpClient()
++    private val client = OkHttpClient.Builder()
++        .connectTimeout(30, TimeUnit.SECONDS)
++        .readTimeout(30, TimeUnit.SECONDS)
++        .writeTimeout(30, TimeUnit.SECONDS)
++        .build()
+ 
+     suspend fun fetchFeed(url: String): Pair<ParsedPodcast?, List<ParsedEpisode>> {
+-        val req = Request.Builder().url(url).build()
+-        client.newCall(req).execute().use { resp ->
+-            if (!resp.isSuccessful) return Pair(null, emptyList())
+-            val body = resp.body?.string() ?: return Pair(null, emptyList())
+-            val podcastInfo = parseFeedInfo(body)
+-            val episodes = parseEpisodes(body)
+-            return Pair(podcastInfo, episodes)
++        return try {
++            val req = Request.Builder().url(url).build()
++            client.newCall(req).execute().use { resp ->
++                if (!resp.isSuccessful) {
++                    Log.e("FeedParser", "HTTP error: ${resp.code}")
++                    return Pair(null, emptyList())
++                }
++                val body = resp.body?.string() ?: return Pair(null, emptyList())
++                val podcastInfo = parseFeedInfo(body)
++                val episodes = parseEpisodes(body)
++                return Pair(podcastInfo, episodes)
++            }
++        } catch (e: Exception) {
++            Log.e("FeedParser", "Failed to fetch feed", e)
++            return Pair(null, emptyList())
+         }
+     }
+ 
+@@ -79,7 +93,9 @@ class FeedParser {
+                 event = parser.next()
+             }
+             return ParsedPodcast(title, imageUrl, description, genre)
+-        } catch (e: Exception) { }
++        } catch (e: Exception) {
++            Log.e("FeedParser", "Failed to parse feed info", e)
++        }
+         return null
+     }
+ 
+@@ -169,7 +185,9 @@ class FeedParser {
+                 }
+                 event = parser.next()
+             }
+-        } catch (e: Exception) { }
++        } catch (e: Exception) {
++            Log.e("FeedParser", "Failed to parse episodes", e)
++        }
+         return list
+     }
+ 
+diff --git a/app/src/main/java/com/stark/podtrail/network/ItunesPodcastSearcher.kt b/app/src/main/java/com/stark/podtrail/network/ItunesPodcastSearcher.kt
+index f4a37e3..10282d8 100644
+--- a/app/src/main/java/com/stark/podtrail/network/ItunesPodcastSearcher.kt
++++ b/app/src/main/java/com/stark/podtrail/network/ItunesPodcastSearcher.kt
+@@ -7,6 +7,8 @@ import kotlinx.coroutines.withContext
+ import okhttp3.OkHttpClient
+ import okhttp3.Request
+ import java.io.IOException
++import java.net.URLEncoder
++import java.util.concurrent.TimeUnit
+ 
+ data class SearchResponse(
+     val resultCount: Int,
+@@ -41,12 +43,17 @@ data class RssId(val attributes: RssIdAttr)
+ data class RssIdAttr(@SerializedName("im:id") val id: String)
+ 
+ class ItunesPodcastSearcher {
+-    private val client = OkHttpClient()
++    private val client = OkHttpClient.Builder()
++        .connectTimeout(30, TimeUnit.SECONDS)
++        .readTimeout(30, TimeUnit.SECONDS)
++        .writeTimeout(30, TimeUnit.SECONDS)
++        .build()
+     private val gson = Gson()
+ 
+     suspend fun search(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
+         if (query.isBlank()) return@withContext emptyList()
+-        val url = "https://itunes.apple.com/search?media=podcast&term=${query}"
++        val encodedQuery = URLEncoder.encode(query, "UTF-8")
++        val url = "https://itunes.apple.com/search?media=podcast&term=${encodedQuery}"
+         return@withContext fetchAndParse(url)
+     }
+ 

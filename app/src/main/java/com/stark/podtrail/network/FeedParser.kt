@@ -7,6 +7,8 @@ import org.xmlpull.v1.XmlPullParserFactory
 import java.io.StringReader
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
+import android.util.Log
 
 data class ParsedEpisode(
     val title: String,
@@ -27,16 +29,28 @@ data class ParsedPodcast(
 )
 
 class FeedParser {
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
 
     suspend fun fetchFeed(url: String): Pair<ParsedPodcast?, List<ParsedEpisode>> {
-        val req = Request.Builder().url(url).build()
-        client.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) return Pair(null, emptyList())
-            val body = resp.body?.string() ?: return Pair(null, emptyList())
-            val podcastInfo = parseFeedInfo(body)
-            val episodes = parseEpisodes(body)
-            return Pair(podcastInfo, episodes)
+        return try {
+            val req = Request.Builder().url(url).build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.e("FeedParser", "HTTP error: ${resp.code}")
+                    return Pair(null, emptyList())
+                }
+                val body = resp.body?.string() ?: return Pair(null, emptyList())
+                val podcastInfo = parseFeedInfo(body)
+                val episodes = parseEpisodes(body)
+                return Pair(podcastInfo, episodes)
+            }
+        } catch (e: Exception) {
+            Log.e("FeedParser", "Failed to fetch feed", e)
+            return Pair(null, emptyList())
         }
     }
 
@@ -79,7 +93,9 @@ class FeedParser {
                 event = parser.next()
             }
             return ParsedPodcast(title, imageUrl, description, genre)
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            Log.e("FeedParser", "Failed to parse feed info", e)
+        }
         return null
     }
 
@@ -169,7 +185,9 @@ class FeedParser {
                 }
                 event = parser.next()
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            Log.e("FeedParser", "Failed to parse episodes", e)
+        }
         return list
     }
 

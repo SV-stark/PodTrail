@@ -7,6 +7,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 data class SearchResponse(
     val resultCount: Int,
@@ -41,12 +43,17 @@ data class RssId(val attributes: RssIdAttr)
 data class RssIdAttr(@SerializedName("im:id") val id: String)
 
 class ItunesPodcastSearcher {
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
     private val gson = Gson()
 
     suspend fun search(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
-        val url = "https://itunes.apple.com/search?media=podcast&term=${query}"
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+        val url = "https://itunes.apple.com/search?media=podcast&term=${encodedQuery}"
         return@withContext fetchAndParse(url)
     }
 

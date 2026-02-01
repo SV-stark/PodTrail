@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Podcast::class, Episode::class], version = 7, exportSchema = false)
+@Database(entities = [Podcast::class, Episode::class], version = 8, exportSchema = false)
 abstract class PodcastDatabase : RoomDatabase() {
     abstract fun podcastDao(): PodcastDao
 
@@ -18,8 +18,7 @@ abstract class PodcastDatabase : RoomDatabase() {
                     PodcastDatabase::class.java,
                     "podtrack.db"
                 )
-                .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
-                .fallbackToDestructiveMigration(true)
+                .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .build().also { INSTANCE = it }
             }
 
@@ -48,5 +47,13 @@ val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
 val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
     override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE podcasts ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        // Add indices for podcastId and listened/lastPlayedTimestamp
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_episodes_podcastId ON episodes(podcastId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_episodes_listened_lastPlayedTimestamp ON episodes(listened, lastPlayedTimestamp)")
     }
 }
