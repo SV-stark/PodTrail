@@ -1,0 +1,61 @@
+package com.stark.podtrail.sync
+
+import android.content.Context
+import androidx.work.*
+import com.stark.podtrail.data.PodcastRepository
+import java.util.concurrent.TimeUnit
+
+class PodcastSyncWorker(
+    context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        return try {
+            // Get repository instance (you'll need to handle dependency injection here)
+            // For now, this is a placeholder that would refresh all podcast feeds
+            // repo.refreshAllPodcasts()
+            
+            Result.success()
+        } catch (e: Exception) {
+            Result.retry()
+        }
+    }
+
+    companion object {
+        const val WORK_NAME = "PodcastSyncWork"
+        
+        fun scheduleSync(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .build()
+                
+            val syncRequest = PeriodicWorkRequestBuilder<PodcastSyncWorker>(
+                repeatInterval = 6, // Every 6 hours
+                repeatIntervalTimeUnit = TimeUnit.HOURS,
+                flexTimeInterval = 1, // Flex window of 1 hour
+                flexIntervalTimeUnit = TimeUnit.HOURS
+            )
+                .setConstraints(constraints)
+                .setBackoffCriteria(
+                    BackoffPolicy.LINEAR,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
+                .build()
+                
+            WorkManager.getInstance(context)
+                .enqueueUniquePeriodicWork(
+                    WORK_NAME,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    syncRequest
+                )
+        }
+        
+        fun cancelSync(context: Context) {
+            WorkManager.getInstance(context)
+                .cancelUniqueWork(WORK_NAME)
+        }
+    }
+}

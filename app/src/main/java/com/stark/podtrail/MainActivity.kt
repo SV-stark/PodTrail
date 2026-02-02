@@ -25,6 +25,9 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.ModalDrawerSheet
+import com.stark.podtrail.ui.EnhancedEpisodeListScreen
+import com.stark.podtrail.ui.EpisodesWithAutoScrollAndSeparator
+import com.stark.podtrail.ui.ContinueHereSeparator
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -302,7 +305,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                     } else if (showSearch) {
                         SearchScreen(vm, onBack = { showSearch = false }, onPodcastAdded = { showSearch = false })
                     } else if (selectedPodcast != null) {
-                        EpisodeListScreen(vm, selectedPodcast!!.id,
+                        EnhancedEpisodeListScreen(vm, selectedPodcast!!.id,
                             listState = episodeListState,
                             onBack = { selectedPodcast = null },
                             onDetails = { ep -> selectedEpisode = ep }
@@ -675,7 +678,11 @@ fun EpisodeListScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(filteredEpisodes) { ep ->
+            EpisodesWithAutoScrollAndSeparator(
+                episodes = filteredEpisodes,
+                listState = listState,
+                isInitialLoad = true
+            ) { ep ->
                 EpisodeCard(ep, onToggle = { vm.setListened(ep, !ep.listened) }, onDetails = { onDetails(ep) })
             }
         }

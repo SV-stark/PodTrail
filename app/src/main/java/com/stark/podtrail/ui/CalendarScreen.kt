@@ -29,26 +29,24 @@ import androidx.compose.material.icons.filled.ChevronRight
 
 @Composable
 fun CalendarScreen(vm: PodcastViewModel, onEpisodeClick: (EpisodeListItem) -> Unit) {
-    // We need all episodes to map them. 
-    // Ideally VM should provide a Map<Day, List<Episode>>. 
-    // For MVP, we fetch all episodes (lite) and map locally.
-    // Caution: If user has 1000s of episodes, this might be slow.
-    // Better: VM provides "Episodes for Month X".
+    // Performance optimized: Load only episodes for the current month instead of all episodes
+    // This significantly reduces memory usage and database load
     
     var currentMonth by remember { mutableStateOf(Calendar.getInstance()) }
-    val episodes by vm.allEpisodesLite.collectAsState(initial = emptyList())
+    val episodes by vm.getEpisodesForMonth(
+        currentMonth.get(Calendar.YEAR), 
+        currentMonth.get(Calendar.MONTH)
+    ).collectAsState(initial = emptyList())
+    
+    // Loading state for month navigation
+    val isLoading by remember { derivedStateOf { episodes.isEmpty() } }
     
     val episodesByDay = remember(episodes, currentMonth) {
         episodes.groupBy { ep ->
             val cal = Calendar.getInstance()
             cal.timeInMillis = ep.pubDate
-            // Key: DayOfYear + Year
-            if (cal.get(Calendar.MONTH) == currentMonth.get(Calendar.MONTH) &&
-                cal.get(Calendar.YEAR) == currentMonth.get(Calendar.YEAR)) {
-                cal.get(Calendar.DAY_OF_MONTH)
-            } else {
-                -1
-            }
+            // Key: Day of month (1-31)
+            cal.get(Calendar.DAY_OF_MONTH)
         }
     }
 
@@ -57,7 +55,7 @@ fun CalendarScreen(vm: PodcastViewModel, onEpisodeClick: (EpisodeListItem) -> Un
     Column(Modifier.fillMaxSize()) {
         // Month Header
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(ResponsiveDimensions.spacingSmall()),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -96,68 +94,93 @@ fun CalendarScreen(vm: PodcastViewModel, onEpisodeClick: (EpisodeListItem) -> Un
         }
         Spacer(Modifier.height(8.dp))
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-        ) {
-            // Empty slots
-            items(offset) { Spacer(Modifier.height(40.dp)) }
-            
-            // Days
-            items(daysInMonth) { i ->
-                val day = i + 1
-                val hasEpisodes = episodesByDay.containsKey(day)
-                val isSelected = selectedDay == day
-                val isToday = isToday(currentMonth, day)
+        LoadingOverlay(isLoading = isLoading) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = ResponsiveDimensions.spacingSmall())
+            ) {
+                // Empty slots
+                items(offset) { Spacer(Modifier.height(ResponsiveDimensions.spacingLarge())) }
                 
-                Box(
-                    modifier = Modifier
-                        .height(48.dp)
-                        .padding(2.dp)
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primaryContainer 
-                            else if (isToday) MaterialTheme.colorScheme.secondaryContainer.copy(alpha=0.3f)
-                            else Color.Transparent, 
-                            CircleShape
-                        )
-                        .clickable { selectedDay = day },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "$day",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
-                        )
-                        if (hasEpisodes) {
-                            Spacer(Modifier.height(2.dp))
-                            Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                // Days
+                items(daysInMonth) { i ->
+                    val day = i + 1
+                    val hasEpisodes = episodesByDay.containsKey(day)
+                    val isSelected = selectedDay == day
+                    val isToday = isToday(currentMonth, day)
+                    
+                    Box(
+                        modifier = Modifier
+                            .height(ResponsiveDimensions.spacingLarge() + ResponsiveDimensions.spacingTiny())
+                            .padding(ResponsiveDimensions.spacingTiny())
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primaryContainer 
+                                else if (isToday) MaterialTheme.colorScheme.secondaryContainer.copy(alpha=0.3f)
+                                else Color.Transparent, 
+                                CircleShape
+                            )
+                            .clickable { selectedDay = day },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$day",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                            )
+                            if (hasEpisodes) {
+                                Spacer(Modifier.height(2.dp))
+                                Box(
+                                    Modifier.size(4.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
         
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(Modifier.padding(vertical = ResponsiveDimensions.spacingSmall()))
         
         // List for selected day
         if (selectedDay != null) {
             val daysEpisodes = episodesByDay[selectedDay] ?: emptyList()
             if (daysEpisodes.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No releases on this day.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    Modifier.fillMaxSize(), 
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No releases on this day.", 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(ResponsiveDimensions.spacingSmall())
+                    )
                 }
             } else {
-                LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                    item { Text("Releases on ${java.text.SimpleDateFormat("MMM", Locale.getDefault()).format(currentMonth.time)} $selectedDay", style = MaterialTheme.typography.titleMedium) }
+                LazyColumn(contentPadding = PaddingValues(ResponsiveDimensions.spacingSmall())) {
+                    item { 
+                        Text(
+                            "Releases on ${java.text.SimpleDateFormat("MMM", Locale.getDefault()).format(currentMonth.time)} $selectedDay", 
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = ResponsiveDimensions.spacingTiny())
+                        ) 
+                    }
                     items(daysEpisodes) { ep ->
                         EpisodesListItemSmall(ep, onClick = { onEpisodeClick(ep) })
                     }
                 }
             }
         } else {
-             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Select a day to view releases", color = MaterialTheme.colorScheme.onSurfaceVariant)
+             Box(
+                Modifier.fillMaxSize(), 
+                contentAlignment = Alignment.Center
+             ) {
+                Text(
+                    "Select a day to view releases", 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(ResponsiveDimensions.spacingSmall())
+                )
             }
         }
     }
@@ -179,7 +202,8 @@ fun EpisodesListItemSmall(ep: EpisodeListItem, onClick: () -> Unit) {
              coil.compose.AsyncImage(
                 model = ep.imageUrl,
                 contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp))
+                modifier = Modifier.size(ResponsiveDimensions.iconSizeLarge())
+                    .clip(RoundedCornerShape(ResponsiveDimensions.cornerRadiusSmall()))
             )
         },
         modifier = Modifier.clickable(onClick = onClick)

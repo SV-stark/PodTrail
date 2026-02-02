@@ -123,6 +123,30 @@ class PodcastRepository(private val dao: PodcastDao) {
     
     fun getAllEpisodesLite() = dao.getAllEpisodesLite()
 
+    fun getEpisodesForMonth(year: Int, month: Int): Flow<List<EpisodeListItem>> {
+        val cal = Calendar.getInstance()
+        cal.set(year, month, 1, 0, 0, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startTime = cal.timeInMillis
+        
+        cal.add(Calendar.MONTH, 1)
+        val endTime = cal.timeInMillis
+        
+        return dao.getEpisodesForMonth(startTime, endTime)
+    }
+
+    fun searchEpisodes(query: String): Flow<List<EpisodeListItem>> {
+        return dao.searchEpisodes(query)
+    }
+
+    fun searchEpisodesInPodcast(podcastId: Long, query: String): Flow<List<EpisodeListItem>> {
+        return dao.searchEpisodesInPodcast(podcastId, query)
+    }
+
+    fun searchPodcasts(query: String): Flow<List<Podcast>> {
+        return dao.searchPodcasts(query)
+    }
+
     fun getTotalTimeListened() = dao.getTotalDurationListened().map { it ?: 0L }
 
     fun getCurrentStreak() = dao.getAllLastPlayedTimestamps().map { timestamps ->

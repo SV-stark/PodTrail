@@ -162,9 +162,117 @@ abstract class PodcastDao {
 
     @Query("SELECT lastPlayedTimestamp, durationMillis FROM episodes WHERE listened = 1 AND lastPlayedTimestamp > :since")
     abstract fun getListenedEpisodesSince(since: Long): Flow<List<EpisodeActivityData>>
+
+    // Playlist operations
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertPlaylist(playlist: Playlist): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertPlaylistCollection(collection: PlaylistCollection): Long
+
+    @Query("SELECT * FROM playlist_collections ORDER BY position ASC")
+    abstract fun getAllPlaylistCollections(): Flow<List<PlaylistCollection>>
+
+    @Query("""
+        SELECT p.*, e.* FROM playlists p 
+        INNER JOIN episodes e ON p.episodeId = e.id 
+        WHERE p.name = :collectionName 
+        ORDER BY p.position ASC
+    """)
+    abstract fun getEpisodesInPlaylist(collectionName: String): Flow<List<Episode>>
+
+    @Query("DELETE FROM playlists WHERE episodeId = :episodeId")
+    abstract suspend fun removeFromPlaylist(episodeId: Long)
+
+    @Query("DELETE FROM playlist_collections WHERE id = :collectionId")
+    abstract suspend fun deletePlaylistCollection(collectionId: Long)
+
+    @Query("UPDATE playlists SET position = :position WHERE id = :id")
+    abstract suspend fun updatePlaylistPosition(id: Long, position: Int)
+
+    @Query("UPDATE playlist_collections SET position = :position WHERE id = :id")
+    abstract suspend fun updatePlaylistCollectionPosition(id: Long, position: Int)
+
+    // Recommendations based on listening history
+    @Query("""
+        SELECT e.*, p.title as podcastTitle, p.imageUrl as podcastImage, p.primaryGenre 
+        FROM episodes e 
+        INNER JOIN podcasts p ON e.podcastId = p.id 
+        WHERE e.listened = 1 
+        ORDER BY e.listenedAt DESC 
+        LIMIT 50
+    """)
+    abstract suspend fun getRecentListenedEpisodes(): List<EpisodeWithPodcastInfo>
+
+    @Query("""
+        SELECT p.* FROM podcasts p
+        INNER JOIN episodes e ON p.id = e.podcastId
+        WHERE e.listened = 1
+        GROUP BY p.id
+        ORDER BY COUNT(e.id) DESC
+        LIMIT 5
+    """)
+    abstract suspend fun getMostListenedPodcasts(): List<Podcast>
+
+    @Query("""
+        SELECT p.* FROM podcasts p
+        INNER JOIN episodes e ON p.id = e.podcastId
+        WHERE p.primaryGenre = :genre AND e.listened = 0
+        GROUP BY p.id
+        ORDER BY RANDOM()
+        LIMIT 3
+    """)
+    abstract suspend fun getRecommendationsByGenre(genre: String): List<Podcast>
+
+    @androidx.room.Query("""
+        SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp 
+        FROM episodes 
+        WHERE pubDate >= :startTime AND pubDate < :endTime
+        ORDER BY pubDate DESC
+    """)
+    abstract fun getEpisodesForMonth(startTime: Long, endTime: Long): Flow<List<EpisodeListItem>>
+
+    @androidx.room.Query("""
+        SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp 
+        FROM episodes 
+        WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'
+        ORDER BY pubDate DESC
+    """)
+    abstract fun searchEpisodes(query: String): Flow<List<EpisodeListItem>>
+
+    @androidx.room.Query("""
+        SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp 
+        FROM episodes 
+        WHERE podcastId = :podcastId AND (title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%')
+        ORDER BY pubDate DESC
+    """)
+    abstract fun searchEpisodesInPodcast(podcastId: Long, query: String): Flow<List<EpisodeListItem>>
+
+    @androidx.room.Query("SELECT * FROM podcasts WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
+    abstract fun searchPodcasts(query: String): Flow<List<Podcast>>
 }
 
 data class EpisodeActivityData(
     val lastPlayedTimestamp: Long,
     val durationMillis: Long?
+)
+
+data class EpisodeWithPodcastInfo(
+    val id: Long,
+    val podcastId: Long,
+    val title: String,
+    val description: String?,
+    val audioUrl: String,
+    val imageUrl: String,
+    val episodeNumber: Int?,
+    val durationMillis: Long?,
+    val pubDate: Long,
+    val guid: String,
+    val listened: Boolean,
+    val listenedAt: Long?,
+    val playbackPosition: Long,
+    val lastPlayedTimestamp: Long,
+    val podcastTitle: String,
+    val podcastImage: String,
+    val primaryGenre: String
 )

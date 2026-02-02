@@ -179,6 +179,14 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         
     val allEpisodesLite = repo.getAllEpisodesLite()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun getEpisodesForMonth(year: Int, month: Int) = repo.getEpisodesForMonth(year, month)
+
+    fun searchEpisodes(query: String) = repo.searchEpisodes(query)
+    
+    fun searchEpisodesInPodcast(podcastId: Long, query: String) = repo.searchEpisodesInPodcast(podcastId, query)
+    
+    fun searchPodcasts(query: String) = repo.searchPodcasts(query)
         
     val currentStreak = repo.getCurrentStreak()
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
@@ -252,6 +260,9 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _isRefreshing = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isRefreshing = _isRefreshing.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    
+    private val _errorMessage = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     fun refreshAllPodcasts() {
         if (_isRefreshing.value) return
@@ -260,9 +271,20 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 repo.refreshAllPodcasts()
                 refreshUpNext()
+                _errorMessage.value = null
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to refresh podcasts: ${e.message}"
             } finally {
                 _isRefreshing.value = false
             }
         }
+    }
+    
+    fun refreshAllFeeds() {
+        refreshAllPodcasts()
+    }
+    
+    fun clearError() {
+        _errorMessage.value = null
     }
 }

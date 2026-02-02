@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.items
 import com.stark.podtrail.data.Podcast
 import com.stark.podtrail.data.Episode
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,81 +41,127 @@ fun HomeScreen(
 ) {
     val podcasts by vm.podcasts.collectAsState()
     val upNext by vm.upNext.collectAsState()
+    val isRefreshing by vm.isRefreshing.collectAsState()
+    val errorMessage by vm.errorMessage.collectAsState()
     
-    // Split UP NEXT into "Continue Watching" (started) and "On Deck" (new) if needed.
-    // For now, vm.upNext returns next unplayed.
-    // We can filter `upNext` for playbackPosition > 0 for "Continue".
-    
+    // Split UP NEXT into "Continue Listening" (started) and "On Deck" (new)
     val continueListening = upNext.filter { it.playbackPosition > 0 }
     val onDeck = upNext.filter { it.playbackPosition == 0L }
 
-    val isRefreshing by vm.isRefreshing.collectAsState()
-    // var showInfoPodcast by remember { mutableStateOf<Podcast?>(null) } // Removed local state
     var isGridView by rememberSaveable { mutableStateOf(false) }
 
-    if (podcasts.isEmpty() && !isRefreshing) {
-        com.stark.podtrail.ui.EmptyState(
+    // Handle error state
+    errorMessage?.let { error ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(ResponsiveDimensions.spacingMedium()),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(ResponsiveDimensions.spacingSmall()),
+                    horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = { vm.clearError() }) {
+                        Text("Dismiss")
+                    }
+                }
+            }
+        }
+    }
+    
+    // Handle loading state when all data is loading
+    if (podcasts.isEmpty() && isRefreshing) {
+        LoadingFullScreen("Loading your library...")
+    } else if (podcasts.isEmpty()) {
+        EmptyState(
              icon = Icons.Default.PlayArrow,
              title = "Your library is empty",
              message = "Subscribe to podcasts to see episodes here.",
              action = null
         )
     } else {
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-        // Refresh Indicator
-        if (isRefreshing) {
-            item {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-        }
+        PullToRefreshWrapper(
+            isRefreshing = isRefreshing,
+            onRefresh = { vm.refreshAllFeeds() }
+        ) { paddingValues ->
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = ResponsiveDimensions.spacingSmall(),
+                    top = paddingValues.calculateTopPadding() + ResponsiveDimensions.spacingSmall(),
+                    end = ResponsiveDimensions.spacingSmall(),
+                    bottom = ResponsiveDimensions.spacingLarge()
+                ),
+                verticalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingMedium())
+            ) {
 
-        // 1. Continue Listening (Shelf)
-        if (continueListening.isNotEmpty()) {
-            item {
-                Text(
-                    "Continue Listening", 
-                    style = MaterialTheme.typography.titleLarge, 
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(continueListening) { episode ->
-                        ContinueListeningCard(episode, onClick = { onOpenEpisode(episode) })
+                // 1. Continue Listening (Shelf)
+                if (continueListening.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Continue Listening", 
+                            style = MaterialTheme.typography.titleLarge, 
+                            modifier = Modifier.padding(
+                                horizontal = ResponsiveDimensions.spacingSmall(),
+                                vertical = ResponsiveDimensions.spacingTiny()
+                            )
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = ResponsiveDimensions.spacingSmall()),
+                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall())
+                        ) {
+                            items(continueListening) { episode ->
+                                ContinueListeningCard(episode, onClick = { onOpenEpisode(episode) })
+                            }
+                        }
                     }
                 }
-            }
-        }
-        
-        // 2. Up Next (Deck/Row) - episodes from subscribed podcasts
-        if (onDeck.isNotEmpty()) {
-            item {
-                Text(
-                    "Up Next", 
-                    style = MaterialTheme.typography.titleLarge, 
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(onDeck) { episode ->
-                        UpNextCard(episode, onClick = { onOpenEpisode(episode) })
+                
+                // 2. Up Next (Deck/Row) - episodes from subscribed podcasts
+                if (onDeck.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Up Next", 
+                            style = MaterialTheme.typography.titleLarge, 
+                            modifier = Modifier.padding(
+                                horizontal = ResponsiveDimensions.spacingSmall(),
+                                vertical = ResponsiveDimensions.spacingTiny()
+                            )
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = ResponsiveDimensions.spacingSmall()),
+                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall())
+                        ) {
+                            items(onDeck) { episode ->
+                                UpNextCard(episode, onClick = { onOpenEpisode(episode) })
+                            }
+                        }
                     }
                 }
-            }
-        }
-        
-        // 3. All Podcasts
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                
+                // 3. All Podcasts
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = ResponsiveDimensions.spacingSmall(),
+                                vertical = ResponsiveDimensions.spacingTiny()
+                            ),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -131,42 +180,38 @@ fun HomeScreen(
             }
         }
         
-        if (isGridView) {
-            items(podcasts.chunked(3)) { rowPodcasts ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    for (pStats in rowPodcasts) {
-                        Box(Modifier.weight(1f)) {
-                            PodcastGridCard(
-                                podcast = pStats.podcast,
-                                stats = pStats,
-                                onClick = { onOpenPodcast(pStats.podcast) }
-                            )
+                // Responsive grid view - adapt columns based on screen size
+                if (isGridView) {
+                    val columns = ResponsiveDimensions.getGridColumns(160.dp)
+                    item {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(columns),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall()),
+                            verticalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall()),
+                            contentPadding = PaddingValues(bottom = ResponsiveDimensions.spacingMedium())
+                        ) {
+                            items(podcasts) { pStats ->
+                                PodcastGridCard(
+                                    podcast = pStats.podcast,
+                                    stats = pStats,
+                                    onClick = { onOpenPodcast(pStats.podcast) }
+                                )
+                            }
                         }
                     }
-                    // Fill empty space if row has fewer than 3 items
-                    if (rowPodcasts.size < 3) {
-                        repeat(3 - rowPodcasts.size) {
-                            Spacer(Modifier.weight(1f))
-                        }
+                } else {
+                    items(podcasts) { pStats ->
+                         PodcastCard(
+                             podcast = pStats.podcast,
+                             stats = pStats,
+                             onClick = { onOpenPodcast(pStats.podcast) },
+                             onInfoClick = { onOpenPodcastInfo(pStats.podcast) }
+                         )
                     }
                 }
             }
-        } else {
-            items(podcasts) { pStats ->
-                 PodcastCard(
-                     podcast = pStats.podcast,
-                     stats = pStats,
-                     onClick = { onOpenPodcast(pStats.podcast) },
-                     onInfoClick = { onOpenPodcastInfo(pStats.podcast) }
-                 )
-            }
         }
-    }
-    
-    // Removed PodcastInfoDialog call
     }
 }
 
