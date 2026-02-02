@@ -24,15 +24,7 @@ data class Playlist(
 )
 
 @Entity(
-    tableName = "playlist_collections",
-    foreignKeys = [
-        ForeignKey(
-            entity = Episode::class,
-            parentColumns = ["id"],
-            childColumns = ["episodeId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ]
+    tableName = "playlist_collections"
 )
 data class PlaylistCollection(
     @PrimaryKey(autoGenerate = true)
