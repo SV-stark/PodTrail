@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stark.podtrail.data.Episode
 import com.stark.podtrail.data.Podcast
+import com.stark.podtrail.data.SortOption
+import com.stark.podtrail.data.EpisodeListItem
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -122,7 +124,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
     var showSearch by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
-    var selectedEpisode by remember { mutableStateOf<com.stark.podtrail.data.EpisodeListItem?>(null) }
+    var selectedEpisode by remember { mutableStateOf<EpisodeListItem?>(null) }
     
     // Podcast Info Screen State
     var selectedPodcastInfo by remember { mutableStateOf<Podcast?>(null) }
@@ -317,7 +319,7 @@ fun PodTrackApp(vm: PodcastViewModel = viewModel()) {
                                 vm, 
                                 onOpenPodcast = { podcast -> selectedPodcast = podcast },
                                 onOpenEpisode = { episode -> 
-                                    selectedEpisode = com.stark.podtrail.data.EpisodeListItem(
+                                    selectedEpisode = EpisodeListItem(
                                         id = episode.id,
                                         podcastId = episode.podcastId,
                                         title = episode.title,
@@ -592,7 +594,7 @@ fun EpisodeListScreen(
     podcastId: Long, 
     listState: androidx.compose.foundation.lazy.LazyListState, 
     onBack: () -> Unit, 
-    onDetails: (com.stark.podtrail.data.EpisodeListItem) -> Unit
+    onDetails: (EpisodeListItem) -> Unit
 ) {
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOption by vm.sortOption.collectAsState()
@@ -639,23 +641,23 @@ fun EpisodeListScreen(
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Newest First") },
-                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_NEWEST); showSortMenu = false },
-                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_NEWEST) Icon(Icons.Default.Check, null) }
+                                onClick = { vm.setSortOption(SortOption.DATE_NEWEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == SortOption.DATE_NEWEST) Icon(Icons.Default.Check, null) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Oldest First") },
-                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DATE_OLDEST); showSortMenu = false },
-                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DATE_OLDEST) Icon(Icons.Default.Check, null) }
+                                onClick = { vm.setSortOption(SortOption.DATE_OLDEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == SortOption.DATE_OLDEST) Icon(Icons.Default.Check, null) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Shortest First") },
-                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_SHORTEST); showSortMenu = false },
-                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_SHORTEST) Icon(Icons.Default.Check, null) }
+                                onClick = { vm.setSortOption(SortOption.DURATION_SHORTEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == SortOption.DURATION_SHORTEST) Icon(Icons.Default.Check, null) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Longest First") },
-                                onClick = { vm.setSortOption(com.stark.podtrail.ui.SortOption.DURATION_LONGEST); showSortMenu = false },
-                                leadingIcon = { if (sortOption == com.stark.podtrail.ui.SortOption.DURATION_LONGEST) Icon(Icons.Default.Check, null) }
+                                onClick = { vm.setSortOption(SortOption.DURATION_LONGEST); showSortMenu = false },
+                                leadingIcon = { if (sortOption == SortOption.DURATION_LONGEST) Icon(Icons.Default.Check, null) }
                             )
                         }
 
@@ -691,7 +693,7 @@ fun EpisodeListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EpisodeCard(ep: com.stark.podtrail.data.EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
+fun EpisodeCard(ep: EpisodeListItem, onToggle: () -> Unit, onDetails: () -> Unit) {
     Card(
         onClick = onDetails,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

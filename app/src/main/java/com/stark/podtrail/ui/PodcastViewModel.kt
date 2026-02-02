@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.stark.podtrail.data.PodcastDatabase
 import com.stark.podtrail.data.PodcastRepository
 import com.stark.podtrail.data.Episode
+import com.stark.podtrail.data.EpisodeListItem
+import com.stark.podtrail.data.SortOption
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -158,7 +160,7 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setListened(e: com.stark.podtrail.data.EpisodeListItem, listened: Boolean) {
+    fun setListened(e: EpisodeListItem, listened: Boolean) {
         viewModelScope.launch {
             repo.markEpisodeListened(e, listened)
             refreshUpNext()

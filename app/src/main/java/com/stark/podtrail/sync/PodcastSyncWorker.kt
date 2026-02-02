@@ -40,10 +40,8 @@ class PodcastSyncWorker(
                 .build()
                 
             val syncRequest = PeriodicWorkRequestBuilder<PodcastSyncWorker>(
-                repeatInterval = 6, // Every 6 hours
-                repeatIntervalTimeUnit = TimeUnit.HOURS,
-                flexTimeInterval = 1, // Flex window of 1 hour
-                flexIntervalTimeUnit = TimeUnit.HOURS
+                6, TimeUnit.HOURS, // repeatInterval, repeatIntervalTimeUnit
+                1, TimeUnit.HOURS  // flexTimeInterval, flexIntervalTimeUnit
             )
                 .setConstraints(constraints)
                 .setBackoffCriteria(

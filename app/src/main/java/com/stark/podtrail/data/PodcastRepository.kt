@@ -77,7 +77,8 @@ class PodcastRepository(private val dao: PodcastDao) {
                         title = mappedPodcast.title ?: podcast.title,
                         imageUrl = mappedPodcast.imageUrl,
                         description = mappedPodcast.description,
-                        primaryGenre = mappedPodcast.genre ?: podcast.primaryGenre ?: "Uncategorized"
+                        primaryGenre = mappedPodcast.genre ?: podcast.primaryGenre ?: "Uncategorized",
+                        lastUpdated = System.currentTimeMillis()
                     )
                     // Only update if something relevant successfully parsed and is different
                     if (updatedPodcast != podcast) {
@@ -107,12 +108,12 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
     }
 
-    fun episodesForPodcast(podcastId: Long, sortOption: com.stark.podtrail.ui.SortOption = com.stark.podtrail.ui.SortOption.DATE_NEWEST) = 
+    fun episodesForPodcast(podcastId: Long, sortOption: SortOption = SortOption.DATE_NEWEST) = 
         when (sortOption) {
-            com.stark.podtrail.ui.SortOption.DATE_NEWEST -> dao.getEpisodesForPodcastLite(podcastId)
-            com.stark.podtrail.ui.SortOption.DATE_OLDEST -> dao.getEpisodesForPodcastLiteAsc(podcastId)
-            com.stark.podtrail.ui.SortOption.DURATION_SHORTEST -> dao.getEpisodesForPodcastLiteDurationAsc(podcastId)
-            com.stark.podtrail.ui.SortOption.DURATION_LONGEST -> dao.getEpisodesForPodcastLiteDurationDesc(podcastId)
+            SortOption.DATE_NEWEST -> dao.getEpisodesForPodcastLite(podcastId)
+            SortOption.DATE_OLDEST -> dao.getEpisodesForPodcastLiteAsc(podcastId)
+            SortOption.DURATION_SHORTEST -> dao.getEpisodesForPodcastLiteDurationAsc(podcastId)
+            SortOption.DURATION_LONGEST -> dao.getEpisodesForPodcastLiteDurationDesc(podcastId)
         }
 
     suspend fun getEpisode(id: Long) = dao.getEpisodeById(id)
