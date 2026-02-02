@@ -6,15 +6,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Podcasts
-import androidx.compose.material.icons.filled.Podcast
+import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.stark.podtrail.data.EpisodeListItem
 import com.stark.podtrail.data.Podcast
+
+enum class SearchScope { ALL, PODCASTS, EPISODES }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +44,7 @@ fun SearchScreen(
     
     val isLoading = searchQuery.isNotBlank() && podcasts.isEmpty() && episodes.isEmpty()
 
-    enum class SearchScope { ALL, PODCASTS, EPISODES }
+
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -84,7 +88,7 @@ fun SearchScreen(
                     selected = searchScope == SearchScope.PODCASTS,
                     onClick = { searchScope = SearchScope.PODCASTS },
                     label = { Text("Podcasts") },
-                    leadingIcon = { Icon(Icons.Default.Podcast, contentDescription = null) }
+                    leadingIcon = { Icon(Icons.Default.Podcasts, contentDescription = null) }
                 )
                 FilterChip(
                     selected = searchScope == SearchScope.EPISODES,

@@ -136,7 +136,8 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         _sortOption.value = option
     }
 
-    fun episodesFor(podcastId: Long) = _sortOption.flatMapLatest { option ->
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun episodesFor(podcastId: Long) = _sortOption.flatMapLatest<SortOption, List<EpisodeListItem>> { option ->
         repo.episodesForPodcast(podcastId, option)
     }
 

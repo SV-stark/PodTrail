@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 @Composable
 fun SwipeableEpisodeCard(
@@ -36,6 +37,7 @@ fun SwipeableEpisodeCard(
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     val swipeThreshold = with(LocalDensity.current) { 100.dp.toPx() }
+    val scope = rememberCoroutineScope()
     
     Box(
         modifier = Modifier
@@ -84,15 +86,18 @@ fun SwipeableEpisodeCard(
                                 offsetX = 0f
                             } else {
                                 // Animate back to center
-                                androidx.compose.animation.core.animate(
-                                    initialValue = offsetX,
-                                    targetValue = 0f,
-                                    animationSpec = tween(300)
-                                ) { value, _ -> offsetX = value }
+                                scope.launch {
+                                    androidx.compose.animation.core.animate(
+                                        initialValue = offsetX,
+                                        targetValue = 0f,
+                                        animationSpec = tween(300)
+                                    ) { value, _ -> offsetX = value }
+                                }
                             }
                         }
-                    ) { change ->
-                        val newOffset = offsetX + change.x
+                    ) { change, dragAmount ->
+                        change.consume()
+                        val newOffset = offsetX + dragAmount
                         offsetX = newOffset.coerceIn(-swipeThreshold * 1.5f, swipeThreshold * 1.5f)
                     }
                 }

@@ -9,10 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.stark.podtrail.storage.*
-
+import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StorageManagementScreen(
@@ -20,6 +21,14 @@ fun StorageManagementScreen(
     onBack: () -> Unit
 ) {
     var storageStats by remember { mutableStateOf<StorageStats?>(null) }
+    
+    // Helper data class for UI
+    data class CleanupDisplayInfo(
+        val title: String,
+        val description: String,
+        val icon: androidx.compose.ui.graphics.vector.ImageVector,
+        val available: Boolean
+    )
     var isLoading by remember { mutableStateOf(false) }
     var showCleanupDialog by remember { mutableStateOf<CleanupOption?>(null) }
     var cleanupResults by remember { mutableStateOf<List<CleanupResult>>(emptyList()) }
@@ -65,9 +74,15 @@ fun StorageManagementScreen(
                     }
                 }
             ) { padding ->
+                val layoutDirection = LocalLayoutDirection.current
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = padding + PaddingValues(ResponsiveDimensions.spacingSmall()),
+                    contentPadding = PaddingValues(
+                        start = padding.calculateStartPadding(layoutDirection) + ResponsiveDimensions.spacingSmall(),
+                        top = padding.calculateTopPadding() + ResponsiveDimensions.spacingSmall(),
+                        end = padding.calculateEndPadding(layoutDirection) + ResponsiveDimensions.spacingSmall(),
+                        bottom = padding.calculateBottomPadding() + ResponsiveDimensions.spacingSmall()
+                    ),
                     verticalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingMedium())
                 ) {
                     // Storage Overview
@@ -130,9 +145,10 @@ fun StorageManagementScreen(
                 onConfirm = {
                     scope.launch {
                         isLoading = true
-                        val result = storageManager.performCleanup(option)
-                        cleanupResults = cleanupResults + result
+                        cleanupResults = cleanupResults + storageManager.performCleanup(option)
                         isLoading = false
+                        // refresh stats
+                        storageStats = storageManager.getStorageStats()
                         showCleanupDialog = null
                     }
                 },
@@ -217,26 +233,26 @@ fun CleanupOptionCard(
     stats: StorageStats,
     onClick: () -> Unit
 ) {
-    val (title, description, icon, available) = when (option) {
-        CleanupOption.OLD_UNLISTENED_EPISODES -> Triple(
+    val info = when (option) {
+        CleanupOption.OLD_UNLISTENED_EPISODES -> CleanupDisplayInfo(
             "Remove Old Unlistened Episodes",
             "Delete episodes older than 6 months that haven't been listened to",
             Icons.Default.Delete,
             stats.oldUnlistenedEpisodes > 0
         )
-        CleanupOption.TRUNCATE_DESCRIPTIONS -> Triple(
+        CleanupOption.TRUNCATE_DESCRIPTIONS -> CleanupDisplayInfo(
             "Truncate Long Descriptions",
             "Limit episode descriptions to 200 characters to save space",
             Icons.Default.TextSnippet,
             true
         )
-        CleanupOption.REMOVE_INACTIVE_PODCASTS -> Triple(
+        CleanupOption.REMOVE_INACTIVE_PODCASTS -> CleanupDisplayInfo(
             "Remove Inactive Podcasts",
             "Delete podcasts not updated in the last year",
-            Icons.Default.Podcast,
+            Icons.Default.Podcasts,
             stats.podcastsLastUpdated.values.any { it < System.currentTimeMillis() - 365L * 24 * 60 * 60 * 1000 }
         )
-        CleanupOption.COMPACT_DATABASE -> Triple(
+        CleanupOption.COMPACT_DATABASE -> CleanupDisplayInfo(
             "Compact Database",
             "Optimize database file size and improve performance",
             Icons.Default.Storage,
@@ -246,33 +262,33 @@ fun CleanupOptionCard(
     
     Card(
         modifier = Modifier.fillMaxWidth(),
-        enabled = available,
-        onClick = if (available) onClick else null
+        enabled = info.available,
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(ResponsiveDimensions.spacingMedium()),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = icon,
+                imageVector = info.icon,
                 contentDescription = null,
                 modifier = Modifier.size(ResponsiveDimensions.iconSizeMedium()),
-                tint = if (available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                tint = if (info.available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(ResponsiveDimensions.spacingMedium()))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = title,
+                    text = info.title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (info.available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = description,
+                    text = info.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (available) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (info.available) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (!available) {
+            if (!info.available) {
                 Text(
                     text = "Not Available",
                     style = MaterialTheme.typography.bodySmall,
@@ -282,6 +298,14 @@ fun CleanupOptionCard(
         }
     }
 }
+// Define data class at top level or use the one defined in StorageManagementScreen if accessible?
+// Better to define it outside.
+data class CleanupDisplayInfo(
+    val title: String,
+    val description: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val available: Boolean
+)
 
 @Composable
 fun AutoCleanupCard(
