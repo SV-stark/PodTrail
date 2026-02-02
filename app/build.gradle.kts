@@ -71,6 +71,9 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
 
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
 
     // Network
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

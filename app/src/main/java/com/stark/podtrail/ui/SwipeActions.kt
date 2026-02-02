@@ -3,6 +3,7 @@ package com.stark.podtrail.ui
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -214,9 +215,8 @@ fun ActionButton(
 fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
     return this.pointerInput(Unit) {
         detectTapGestures(
-            onPress = { _ -> 
+            onTap = { 
                 onClick()
-                true
             }
         )
     }

@@ -12,14 +12,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stark.podtrail.data.EpisodeListItem
 import com.stark.podtrail.data.Podcast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    vm: PodcastViewModel = hiltViewModel(),
+    vm: PodcastViewModel,
     onPodcastClick: (Podcast) -> Unit,
     onEpisodeClick: (EpisodeListItem) -> Unit
 ) {

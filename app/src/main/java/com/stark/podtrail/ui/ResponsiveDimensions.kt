@@ -107,7 +107,7 @@ object ResponsiveDimensions {
     fun getGridColumns(minItemWidth: Dp = 200.dp): Int {
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
-        return (screenWidth / minItemWidth).coerceAtMost(4)
+        return (screenWidth / minItemWidth).toInt().coerceAtMost(4)
     }
     
     // Safe area insets

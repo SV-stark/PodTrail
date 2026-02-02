@@ -1,4 +1,4 @@
-package com.stark.podtrail.ui
+package com.stark.podtrail.data
 
 enum class SortOption {
     DATE_NEWEST,

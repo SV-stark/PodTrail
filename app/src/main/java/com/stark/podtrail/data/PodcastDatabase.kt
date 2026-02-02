@@ -1,5 +1,4 @@
 package com.stark.podtrail.data
-package com.stark.podtrail.data
 
 import android.content.Context
 import androidx.room.Database

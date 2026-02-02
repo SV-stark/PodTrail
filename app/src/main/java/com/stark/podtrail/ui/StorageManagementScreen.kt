@@ -23,6 +23,7 @@ fun StorageManagementScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showCleanupDialog by remember { mutableStateOf<CleanupOption?>(null) }
     var cleanupResults by remember { mutableStateOf<List<CleanupResult>>(emptyList()) }
+    val scope = rememberCoroutineScope()
     
     LaunchedEffect(Unit) {
         isLoading = true
@@ -59,7 +60,9 @@ fun StorageManagementScreen(
             PullToRefreshWrapper(
                 isRefreshing = false,
                 onRefresh = {
-                    storageStats = storageManager.getStorageStats()
+                    scope.launch {
+                        storageStats = storageManager.getStorageStats()
+                    }
                 }
             ) { padding ->
                 LazyColumn(
@@ -93,9 +96,11 @@ fun StorageManagementScreen(
                     item {
                         AutoCleanupCard(
                             onPerformAutoCleanup = {
-                                isLoading = true
-                                cleanupResults = storageManager.autoCleanup()
-                                isLoading = false
+                                scope.launch {
+                                    isLoading = true
+                                    cleanupResults = storageManager.autoCleanup()
+                                    isLoading = false
+                                }
                             }
                         )
                     }
@@ -123,11 +128,13 @@ fun StorageManagementScreen(
                 option = option,
                 stats = storageStats!!,
                 onConfirm = {
-                    isLoading = true
-                    val result = storageManager.performCleanup(option)
-                    cleanupResults = cleanupResults + result
-                    isLoading = false
-                    showCleanupDialog = null
+                    scope.launch {
+                        isLoading = true
+                        val result = storageManager.performCleanup(option)
+                        cleanupResults = cleanupResults + result
+                        isLoading = false
+                        showCleanupDialog = null
+                    }
                 },
                 onDismiss = { showCleanupDialog = null }
             )

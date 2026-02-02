@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.stark.podtrail.data.EpisodeListItem
+import com.stark.podtrail.data.Podcast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

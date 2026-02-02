@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.stark.podtrail.data.EpisodeListItem
@@ -25,12 +26,12 @@ import java.util.*
 fun EnhancedEpisodeListScreen(
     vm: com.stark.podtrail.ui.PodcastViewModel,
     podcastId: Long,
+    listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
     onBack: () -> Unit,
     onDetails: (EpisodeListItem) -> Unit
 ) {
     val episodes by vm.episodesFor(podcastId).collectAsState(initial = emptyList())
     val sortOption by vm.sortOption.collectAsState()
-    val listState = rememberLazyListState()
     
     // Selection state
     var isSelectionMode by remember { mutableStateOf(false) }
