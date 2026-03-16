@@ -7,10 +7,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PodcastRepository(private val dao: PodcastDao) {
-    private val parser = FeedParser()
-
+@Singleton
+class PodcastRepository @Inject constructor(
+    private val dao: PodcastDao,
+    private val parser: FeedParser
+) {
 
     fun allPodcasts() = dao.getAllPodcasts()
     
@@ -116,6 +120,23 @@ class PodcastRepository(private val dao: PodcastDao) {
             SortOption.DURATION_LONGEST -> dao.getEpisodesForPodcastLiteDurationDesc(podcastId)
         }
 
+    fun episodesForPodcastPaging(podcastId: Long, sortOption: SortOption = SortOption.DATE_NEWEST): Flow<androidx.paging.PagingData<EpisodeListItem>> {
+        return androidx.paging.Pager(
+            config = androidx.paging.PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                when (sortOption) {
+                    SortOption.DATE_NEWEST -> dao.getEpisodesForPodcastLitePaging(podcastId)
+                    SortOption.DATE_OLDEST -> dao.getEpisodesForPodcastLiteAscPaging(podcastId)
+                    SortOption.DURATION_SHORTEST -> dao.getEpisodesForPodcastLiteDurationAscPaging(podcastId)
+                    SortOption.DURATION_LONGEST -> dao.getEpisodesForPodcastLiteDurationDescPaging(podcastId)
+                }
+            }
+        ).flow
+    }
+
     suspend fun getEpisode(id: Long) = dao.getEpisodeById(id)
     
     fun getEpisodeFlow(id: Long) = dao.getEpisodeByIdFlow(id)
@@ -158,21 +179,16 @@ class PodcastRepository(private val dao: PodcastDao) {
         
         timestamps.forEach { ts ->
             cal.timeInMillis = ts
-            // Create a unique day key: YYYYMMDD or just epoch day (local)
-            // Using year * 1000 + dayOfYear for simplicity/uniqueness
             val dayKey = (cal.get(Calendar.YEAR) * 1000 + cal.get(Calendar.DAY_OF_YEAR)).toLong()
             uniqueDays.add(dayKey)
         }
         
-        // Calculate streak
         var streak = 0
         val rightNow = Calendar.getInstance()
         val todayKey = (rightNow.get(Calendar.YEAR) * 1000 + rightNow.get(Calendar.DAY_OF_YEAR)).toLong()
         
-        // Check today or yesterday to start streak
         if (uniqueDays.contains(todayKey)) {
             streak++
-            // Check previous days
             var checkDay = Calendar.getInstance()
             checkDay.add(Calendar.DAY_OF_YEAR, -1)
             while (true) {
@@ -185,15 +201,12 @@ class PodcastRepository(private val dao: PodcastDao) {
                  }
             }
         } else {
-            // Check if yesterday was active (streak continues but not incremented for today yet? 
-            // Usually streak implies consecutive days ending Today or Yesterday.
-            // If I listened yesterday, my streak is valid.
             var checkDay = Calendar.getInstance()
             checkDay.add(Calendar.DAY_OF_YEAR, -1)
             val yesterdayKey = (checkDay.get(Calendar.YEAR) * 1000 + checkDay.get(Calendar.DAY_OF_YEAR)).toLong()
             
             if (uniqueDays.contains(yesterdayKey)) {
-                streak++ // Counts yesterday
+                streak++
                 checkDay.add(Calendar.DAY_OF_YEAR, -1) 
                  while (true) {
                      val key = (checkDay.get(Calendar.YEAR) * 1000 + checkDay.get(Calendar.DAY_OF_YEAR)).toLong()
@@ -214,7 +227,7 @@ class PodcastRepository(private val dao: PodcastDao) {
 
     fun getLast7DaysActivity(): Flow<Map<Int, Long>> {
         val cal = Calendar.getInstance()
-        cal.add(Calendar.DAY_OF_YEAR, -6) // 7 days inclusive
+        cal.add(Calendar.DAY_OF_YEAR, -6)
         cal.set(Calendar.HOUR_OF_DAY, 0)
         cal.set(Calendar.MINUTE, 0)
         cal.set(Calendar.SECOND, 0)
@@ -222,7 +235,6 @@ class PodcastRepository(private val dao: PodcastDao) {
 
         return dao.getListenedEpisodesSince(since).map { activityData ->
              val dailyMap = mutableMapOf<Int, Long>()
-             // Initialize last 7 days with 0
              for (i in 0..6) {
                  val dayCal = Calendar.getInstance()
                  dayCal.add(Calendar.DAY_OF_YEAR, -i)
@@ -234,7 +246,6 @@ class PodcastRepository(private val dao: PodcastDao) {
                  val c = Calendar.getInstance()
                  c.timeInMillis = data.lastPlayedTimestamp
                  val dayKey = c.get(Calendar.DAY_OF_YEAR)
-                 // Only sum up if it's within our window (query handles this mostly, but exact day boundary might vary)
                  if (dailyMap.containsKey(dayKey)) {
                      dailyMap[dayKey] = (dailyMap[dayKey] ?: 0L) + (data.durationMillis ?: 0L)
                  }
@@ -267,7 +278,6 @@ class PodcastRepository(private val dao: PodcastDao) {
         ))
     }
     
-    // overload for full episode object if needed
     suspend fun markEpisodeListened(episode: Episode, listened: Boolean) {
         val now = System.currentTimeMillis()
         dao.updateEpisode(episode.copy(
@@ -291,7 +301,7 @@ class PodcastRepository(private val dao: PodcastDao) {
         val podcast = dao.getPodcastById(podcastId) ?: return@withContext null
         try {
             val (_, episodes) = parser.fetchFeed(podcast.feedUrl)
-            val match = episodes.find { (it.guid == episodeGuid) || (it.title == episodeGuid) } // guid fallback to title
+            val match = episodes.find { (it.guid == episodeGuid) || (it.title == episodeGuid) }
             match?.description
         } catch (e: Exception) {
             null
@@ -305,4 +315,3 @@ class PodcastRepository(private val dao: PodcastDao) {
         }
     }
 }
-

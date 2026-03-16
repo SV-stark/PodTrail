@@ -1,27 +1,25 @@
 package com.stark.podtrail.ui
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.stark.podtrail.data.PodcastDatabase
 import com.stark.podtrail.data.PodcastRepository
 import com.stark.podtrail.data.Episode
 import com.stark.podtrail.data.EpisodeListItem
 import com.stark.podtrail.data.SortOption
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.combine
+import com.stark.podtrail.data.SettingsRepository
+import com.stark.podtrail.network.ItunesPodcastSearcher
+import com.stark.podtrail.network.SearchResult
+import kotlinx.coroutines.flow.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.coroutines.launch
-
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.FlowPreview
 
 data class Badge(
     val name: String,
@@ -30,18 +28,18 @@ data class Badge(
     val unlocked: Boolean
 )
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class PodcastViewModel(app: Application) : AndroidViewModel(app) {
-    private val db = PodcastDatabase.getInstance(app)
-    private val repo = PodcastRepository(db.podcastDao())
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@HiltViewModel
+class PodcastViewModel @Inject constructor(
+    private val repo: PodcastRepository,
+    private val settingsRepo: SettingsRepository
+) : ViewModel() {
 
     val podcasts = repo.allPodcasts()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val favoritePodcasts = repo.favoritePodcasts()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
-    val settingsRepo = com.stark.podtrail.data.SettingsRepository(app)
 
     fun toggleFavorite(podcastId: Long, currentStatus: Boolean) {
         viewModelScope.launch {
@@ -62,18 +60,27 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private val _sortOption = kotlinx.coroutines.flow.MutableStateFlow(SortOption.DATE_NEWEST)
-    val sortOption = _sortOption.stateIn(viewModelScope, SharingStarted.Lazily, SortOption.DATE_NEWEST)
+    private val _sortOption = MutableStateFlow(SortOption.DATE_NEWEST)
+    val sortOption = _sortOption.asStateFlow()
     
-    private val searcher = com.stark.podtrail.network.ItunesPodcastSearcher()
-    private val _searchResults = kotlinx.coroutines.flow.MutableStateFlow<List<com.stark.podtrail.network.SearchResult>>(emptyList())
-    val searchResults = _searchResults.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    private val searcher = ItunesPodcastSearcher()
+    
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
 
-    private val _discoverPodcasts = kotlinx.coroutines.flow.MutableStateFlow<List<com.stark.podtrail.network.SearchResult>>(emptyList())
-    val discoverPodcasts = _discoverPodcasts.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val searchResults: StateFlow<List<SearchResult>> = _searchQuery
+        .debounce(500L)
+        .filter { it.isNotBlank() }
+        .map { query ->
+            searcher.search(query)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    private val _discoverPodcasts = MutableStateFlow<List<SearchResult>>(emptyList())
+    val discoverPodcasts = _discoverPodcasts.asStateFlow()
     
-    private val _discoverTitle = kotlinx.coroutines.flow.MutableStateFlow("Top Podcasts")
-    val discoverTitle = _discoverTitle.stateIn(viewModelScope, SharingStarted.Lazily, "Top Podcasts")
+    private val _discoverTitle = MutableStateFlow("Top Podcasts")
+    val discoverTitle = _discoverTitle.asStateFlow()
 
     private var selectedGenreId: Long? = null
 
@@ -85,19 +92,13 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshDiscover() {
         viewModelScope.launch {
             if (selectedGenreId != null) {
-                // Determine title implicitly or passed?
-                // For now, if genre is selected, we assume title is handled by UI or we can set it here if we had the name.
-                // But let's just use what we have.
                  _discoverPodcasts.value = searcher.getTopPodcasts(genreId = selectedGenreId)
                  return@launch
             }
 
-            // Logic: Pick a random podcast from user's library, find its genre, and get top charts for that genre.
-            // If empty, get generic top podcasts.
             val localPodcasts = repo.allPodcastsDirect()
             if (localPodcasts.isNotEmpty()) {
                 val randomPod = localPodcasts.random()
-                // Lookup genre
                 val details = searcher.search(randomPod.title).firstOrNull() 
                 if (details?.primaryGenreId != null) {
                     _discoverTitle.value = "Top in ${details.primaryGenreName ?: "suggested"}"
@@ -106,13 +107,12 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             
-            // Fallback
             _discoverTitle.value = "Top Podcasts"
             _discoverPodcasts.value = searcher.getTopPodcasts()
         }
     }
     
-    fun subscribeToSearchResult(result: com.stark.podtrail.network.SearchResult) {
+    fun subscribeToSearchResult(result: SearchResult) {
          viewModelScope.launch {
              val feedUrl = result.feedUrl ?: result.collectionId?.let { id ->
                  searcher.lookup(id)?.feedUrl
@@ -125,22 +125,24 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun search(query: String) {
-        viewModelScope.launch {
-            _searchResults.value = searcher.search(query)
-        }
+        _searchQuery.value = query
     }
 
     fun clearSearch() {
-        _searchResults.value = emptyList()
+        _searchQuery.value = ""
     }
 
     fun setSortOption(option: SortOption) {
         _sortOption.value = option
     }
 
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    fun episodesFor(podcastId: Long) = _sortOption.flatMapLatest<SortOption, List<EpisodeListItem>> { option ->
+    fun episodesFor(podcastId: Long) = _sortOption.flatMapLatest { option ->
         repo.episodesForPodcast(podcastId, option)
+    }
+
+    fun episodesForPaging(podcastId: Long) = _sortOption.flatMapLatest { option ->
+        repo.episodesForPodcastPaging(podcastId, option)
+            .cachedIn(viewModelScope)
     }
 
     suspend fun getEpisode(id: Long) = repo.getEpisode(id)
@@ -152,10 +154,7 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
             val ep = repo.getEpisode(episodeId) ?: return@launch
             val fullDesc = repo.fetchRemoteEpisodeDescription(ep.podcastId, ep.guid)
             if (fullDesc != null && fullDesc != ep.description) {
-                // Update DB with full description
                  repo.markEpisodeListened(ep.copy(description = fullDesc), ep.listened)
-                 // NOTE: markEpisodeListened updates the whole object, so this works to save description too.
-                 // Ideally should have a dedicated updateEpisode(episode) method but this reuses existing logic safely.
             }
         }
     }
@@ -167,7 +166,6 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
     
-    // overload for full object
     fun setListened(e: Episode, listened: Boolean) {
         viewModelScope.launch {
             repo.markEpisodeListened(e, listened)
@@ -226,12 +224,11 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
                 Icons.Default.Mic,
                 podList.size >= 5
             )
-            // Night Owl / Early Bird require checking specific listen times history, skipping for MVP complexity
         )
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val _upNext = kotlinx.coroutines.flow.MutableStateFlow<List<Episode>>(emptyList())
-    val upNext = _upNext.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    private val _upNext = MutableStateFlow<List<Episode>>(emptyList())
+    val upNext = _upNext.asStateFlow()
 
     init {
         refreshUpNext()
@@ -256,16 +253,15 @@ class PodcastViewModel(app: Application) : AndroidViewModel(app) {
     fun markPodcastListened(podcastId: Long, listened: Boolean) {
         viewModelScope.launch {
             repo.markPodcastListened(podcastId, listened)
-            refreshAllPodcasts() // to update stats
             refreshUpNext()
         }
     }
 
-    private val _isRefreshing = kotlinx.coroutines.flow.MutableStateFlow(false)
-    val isRefreshing = _isRefreshing.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
     
-    private val _errorMessage = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
-    val errorMessage = _errorMessage.stateIn(viewModelScope, SharingStarted.Lazily, null)
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
 
     fun refreshAllPodcasts() {
         if (_isRefreshing.value) return

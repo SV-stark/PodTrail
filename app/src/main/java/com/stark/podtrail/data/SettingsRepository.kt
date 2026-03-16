@@ -1,33 +1,28 @@
 package com.stark.podtrail.data
 
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
-
 import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-
 import androidx.room.withTransaction
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
+import com.stark.podtrail.network.OpmlManager
+import androidx.datastore.preferences.preferencesDataStore
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-data class AppSettings(
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val useDynamicColor: Boolean = true,
-    val useAmoled: Boolean = false,
-    val customColor: Int = 0xFF6200EE.toInt(), // Purple default
-    val profileImageUri: String? = null,
-    val profileBgUri: String? = null,
-    val userName: String? = null
-)
-
-enum class ThemeMode { LIGHT, DARK, SYSTEM }
-
-class SettingsRepository(private val context: Context) {
+@Singleton
+class SettingsRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val database: PodcastDatabase
+) {
     private val dataStore = context.dataStore
+    private val dao = database.podcastDao()
 
     private object Keys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -100,10 +95,7 @@ class SettingsRepository(private val context: Context) {
                 try {
                     val backupData = gson.fromJson(jsonString, MinimalBackupData::class.java)
                     if (backupData.podcasts != null) { // Simple check
-                        val db = PodcastDatabase.getInstance(context)
-                        val dao = db.podcastDao()
-                        
-                        db.withTransaction {
+                        database.withTransaction {
                             dao.deleteAllEpisodes()
                             dao.deleteAllPodcasts()
                             
@@ -114,7 +106,7 @@ class SettingsRepository(private val context: Context) {
                                     title = mp.title,
                                     feedUrl = mp.feedUrl,
                                     isFavorite = mp.isFavorite,
-                                    imageUrl = null, // Will be fetched
+                                    imageUrl = null,
                                     description = null,
                                     primaryGenre = null
                                 )
@@ -129,7 +121,7 @@ class SettingsRepository(private val context: Context) {
                                     Episode(
                                         podcastId = pid,
                                         guid = me.guid,
-                                        title = "Restoring...", // Placeholder
+                                        title = "Restoring...",
                                         listened = me.listened,
                                         playbackPosition = me.playbackPosition,
                                         lastPlayedTimestamp = me.lastPlayedTimestamp,
@@ -145,15 +137,11 @@ class SettingsRepository(private val context: Context) {
                         return@withContext true
                     }
                 } catch (e: Exception) {
-                    // Fallback to legacy or error
+                    // Fallback to legacy
                 }
 
-                // Legacy Fallback (Full Backup)
                 val legacyBackup = gson.fromJson(jsonString, BackupData::class.java)
-                val db = PodcastDatabase.getInstance(context)
-                val dao = db.podcastDao()
-                
-                db.withTransaction {
+                database.withTransaction {
                     dao.deleteAllEpisodes()
                     dao.deleteAllPodcasts()
                     dao.insertPodcasts(legacyBackup.podcasts)
@@ -168,16 +156,11 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun exportDatabase(uri: android.net.Uri): Boolean {
-        // ... (existing implementation)
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                val db = PodcastDatabase.getInstance(context)
-                val dao = db.podcastDao()
-                
                 val podcasts = dao.getAllPodcastsSync()
                 val episodes = dao.getAllEpisodesSync()
                 
-                // Map to Minimal Data
                 val minimalPodcasts = podcasts.map { p ->
                     MinimalPodcast(
                         feedUrl = p.feedUrl,
@@ -186,10 +169,8 @@ class SettingsRepository(private val context: Context) {
                     )
                 }
                 
-                // Create map for lookups
                 val podcastIdToUrl = podcasts.associate { it.id to it.feedUrl }
                 
-                // Filter and Map Episodes (only keep listened or in-progress)
                 val minimalEpisodes = episodes.filter { it.listened || it.playbackPosition > 0 }
                     .mapNotNull { ep ->
                         val url = podcastIdToUrl[ep.podcastId]
@@ -227,13 +208,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun exportOpml(uri: android.net.Uri): Boolean {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                val db = PodcastDatabase.getInstance(context)
-                val dao = db.podcastDao()
                 val podcasts = dao.getAllPodcastsSync()
-                
                 val opmlManager = OpmlManager()
                 val opmlString = opmlManager.generateOpml(podcasts)
-                
                 context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(opmlString) }
                 true
             } catch (e: Exception) {
@@ -251,13 +228,11 @@ class SettingsRepository(private val context: Context) {
                 val opmlManager = OpmlManager()
                 val outlines = opmlManager.parseOpml(inputStream)
                 
-                // Get existing podcasts to skip
                 val existingPodcasts = podcastRepository.allPodcastsDirect()
                 val existingUrls = existingPodcasts.map { it.feedUrl }.toSet()
                 
                 outlines.forEach { outline ->
                     if (!existingUrls.contains(outline.xmlUrl)) {
-                        // Add new podcast
                         val result = podcastRepository.addPodcast(outline.xmlUrl)
                         if (result.isSuccess) {
                             count++
@@ -272,4 +247,3 @@ class SettingsRepository(private val context: Context) {
         }
     }
 }
-

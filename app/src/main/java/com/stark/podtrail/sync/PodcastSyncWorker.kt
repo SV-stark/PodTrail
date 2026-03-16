@@ -1,6 +1,7 @@
 package com.stark.podtrail.sync
 
 import android.content.Context
+import androidx.hilt.work.HiltWorker
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -11,19 +12,20 @@ import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.WorkerParameters
 import com.stark.podtrail.data.PodcastRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
 
-class PodcastSyncWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class PodcastSyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val repo: PodcastRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
-            // Get repository instance (you'll need to handle dependency injection here)
-            // For now, this is a placeholder that would refresh all podcast feeds
-            // repo.refreshAllPodcasts()
-            
+            repo.refreshAllPodcasts()
             Result.success()
         } catch (e: Exception) {
             Result.retry()
@@ -40,8 +42,8 @@ class PodcastSyncWorker(
                 .build()
                 
             val syncRequest = PeriodicWorkRequestBuilder<PodcastSyncWorker>(
-                6, TimeUnit.HOURS, // repeatInterval, repeatIntervalTimeUnit
-                1, TimeUnit.HOURS  // flexTimeInterval, flexIntervalTimeUnit
+                6, TimeUnit.HOURS,
+                1, TimeUnit.HOURS
             )
                 .setConstraints(constraints)
                 .setBackoffCriteria(

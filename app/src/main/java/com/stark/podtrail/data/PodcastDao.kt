@@ -61,6 +61,18 @@ abstract class PodcastDao {
     @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
     abstract fun getEpisodesForPodcastLiteDurationDesc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    abstract fun getEpisodesForPodcastLitePaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    abstract fun getEpisodesForPodcastLiteAscPaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
+    abstract fun getEpisodesForPodcastLiteDurationAscPaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+
+    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
+    abstract fun getEpisodesForPodcastLiteDurationDescPaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+
     @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
     abstract fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>
 
@@ -123,12 +135,21 @@ abstract class PodcastDao {
     @Query("SELECT COUNT(*) FROM episodes WHERE title = 'Restoring...'")
     abstract suspend fun getRestoringCount(): Int
 
+    @Query("SELECT * FROM episodes WHERE podcastId = :podcastId")
+    abstract suspend fun getEpisodesByPodcastIdSync(podcastId: Long): List<Episode>
+
     @Transaction
     open suspend fun upsertEpisodesMetadata(newEpisodes: List<Episode>) {
+        if (newEpisodes.isEmpty()) return
+        val podcastId = newEpisodes.first().podcastId
+        val existingEpisodes = getEpisodesByPodcastIdSync(podcastId).associateBy { it.guid }
+        
+        val toUpdate = mutableListOf<Episode>()
+        val toInsert = mutableListOf<Episode>()
+
         for (newEp in newEpisodes) {
-            val existing = getEpisodeByGuid(newEp.guid)
+            val existing = existingEpisodes[newEp.guid]
             if (existing != null) {
-                // Update metadata, preserve playback state
                 val updated = existing.copy(
                     title = newEp.title,
                     pubDate = newEp.pubDate,
@@ -137,14 +158,21 @@ abstract class PodcastDao {
                     episodeNumber = newEp.episodeNumber,
                     durationMillis = newEp.durationMillis,
                     description = newEp.description
-                    // listened, playbackPosition, lastPlayedTimestamp are from 'existing'
                 )
-                updateEpisode(updated)
+                if (updated != existing) {
+                    toUpdate.add(updated)
+                }
             } else {
-                insertEpisode(newEp)
+                toInsert.add(newEp)
             }
         }
+        
+        if (toUpdate.isNotEmpty()) updateEpisodes(toUpdate)
+        if (toInsert.isNotEmpty()) insertEpisodes(toInsert)
     }
+
+    @Update
+    abstract suspend fun updateEpisodes(episodes: List<Episode>)
 
     @Query("""
         SELECT 
