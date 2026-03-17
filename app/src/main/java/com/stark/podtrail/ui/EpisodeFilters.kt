@@ -210,7 +210,7 @@ fun EpisodeSortMenu(
 }
 
 enum class EpisodeFilter(val displayName: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    ALL("All", Icons.Default.Podcast),
+    ALL("All", Icons.Default.Podcasts),
     UNLISTENED("Unlistened", Icons.Default.RadioButtonUnchecked),
     LISTENED("Listened", Icons.Default.CheckCircle),
     IN_PROGRESS("In Progress", Icons.Default.PlayArrow),

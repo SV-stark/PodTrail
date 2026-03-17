@@ -17,7 +17,7 @@ import coil.compose.AsyncImage
 import androidx.compose.material.icons.filled.Podcasts
 import com.stark.podtrail.data.Episode
 import com.stark.podtrail.data.EpisodeListItem
-import com.stark.podtrail.EpisodeCard
+// Removed incorrect import
 
 private fun Episode.toListItem() = EpisodeListItem(
     id = id,

@@ -30,7 +30,7 @@ fun EpisodesWithAutoScroll(
     }
     
     // Render episodes
-    items(episodes) { episode ->
+    episodes.forEach { episode ->
         itemContent(episode)
     }
 }
@@ -62,9 +62,7 @@ fun EpisodesWithAutoScrollAndSeparator(
     val firstUnlistenedIndex = episodes.indexOfFirst { !it.listened }
     
     // Render episodes with separator
-    items(episodes.size) { index ->
-        val episode = episodes[index]
-        
+    episodes.forEachIndexed { index, episode ->
         // Add "Continue Here" separator before first unlistened episode
         if (index == firstUnlistenedIndex && firstUnlistenedIndex > 0) {
             ContinueHereSeparator()

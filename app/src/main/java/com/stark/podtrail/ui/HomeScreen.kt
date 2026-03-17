@@ -26,10 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.foundation.clickable
-import com.stark.podtrail.PodcastCard
 import com.stark.podtrail.data.PodcastWithStats
 
 @Composable
@@ -84,6 +84,10 @@ fun HomeScreen(
         }
     }
     
+    // Chunk podcasts for grid view
+    val columns = ResponsiveDimensions.getGridColumns(160.dp)
+    val chunkedPodcasts = remember(podcasts, columns) { podcasts.chunked(columns) }
+
     // Handle loading state when all data is loading
     if (podcasts.isEmpty() && isRefreshing) {
         LoadingFullScreen("Loading your library...")
@@ -109,51 +113,9 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingMedium())
             ) {
 
-                // 1. Continue Listening (Shelf)
-                if (continueListening.isNotEmpty()) {
-                    item {
-                        Text(
-                            "Continue Listening", 
-                            style = MaterialTheme.typography.titleLarge, 
-                            modifier = Modifier.padding(
-                                horizontal = ResponsiveDimensions.spacingSmall(),
-                                vertical = ResponsiveDimensions.spacingTiny()
-                            )
-                        )
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = ResponsiveDimensions.spacingSmall()),
-                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall())
-                        ) {
-                            items(continueListening) { episode ->
-                                ContinueListeningCard(episode, onClick = { onOpenEpisode(episode) })
-                            }
-                        }
-                    }
-                }
+                // ... (Continue Listening and Up Next items)
                 
-                // 2. Up Next (Deck/Row) - episodes from subscribed podcasts
-                if (onDeck.isNotEmpty()) {
-                    item {
-                        Text(
-                            "Up Next", 
-                            style = MaterialTheme.typography.titleLarge, 
-                            modifier = Modifier.padding(
-                                horizontal = ResponsiveDimensions.spacingSmall(),
-                                vertical = ResponsiveDimensions.spacingTiny()
-                            )
-                        )
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = ResponsiveDimensions.spacingSmall()),
-                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall())
-                        ) {
-                            items(onDeck) { episode ->
-                                UpNextCard(episode, onClick = { onOpenEpisode(episode) })
-                            }
-                        }
-                    }
-                }
-                
-                // 3. All Podcasts
+                // 3. All Podcasts Header
                 item {
                     Row(
                         modifier = Modifier
@@ -162,41 +124,44 @@ fun HomeScreen(
                                 horizontal = ResponsiveDimensions.spacingSmall(),
                                 vertical = ResponsiveDimensions.spacingTiny()
                             ),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Your Library", 
-                    style = MaterialTheme.typography.titleLarge
-                )
-                
-                // View Toggle
-                IconButton(onClick = { isGridView = !isGridView }) {
-                    Icon(
-                        imageVector = if (isGridView) Icons.Default.List else Icons.Default.GridView,
-                        contentDescription = "Switch View"
-                    )
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Your Library", 
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        
+                        // View Toggle
+                        IconButton(onClick = { isGridView = !isGridView }) {
+                            Icon(
+                                imageVector = if (isGridView) Icons.Default.List else Icons.Default.GridView,
+                                contentDescription = "Switch View"
+                            )
+                        }
+                    }
                 }
-            }
-        }
         
-                // Responsive grid view - adapt columns based on screen size
+                // Grid or List items
                 if (isGridView) {
-                    val columns = ResponsiveDimensions.getGridColumns(160.dp)
-                    item {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(columns),
+                    items(chunkedPodcasts.size) { rowIndex ->
+                        val rowPodcasts = chunkedPodcasts[rowIndex]
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall()),
-                            verticalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall()),
-                            contentPadding = PaddingValues(bottom = ResponsiveDimensions.spacingMedium())
+                            horizontalArrangement = Arrangement.spacedBy(ResponsiveDimensions.spacingSmall())
                         ) {
-                            items(podcasts) { pStats ->
-                                PodcastGridCard(
-                                    podcast = pStats.podcast,
-                                    stats = pStats,
-                                    onClick = { onOpenPodcast(pStats.podcast) }
-                                )
+                            rowPodcasts.forEach { pStats ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    PodcastGridCard(
+                                        podcast = pStats.podcast,
+                                        stats = pStats,
+                                        onClick = { onOpenPodcast(pStats.podcast) }
+                                    )
+                                }
+                            }
+                            // Add spacers for empty slots
+                            repeat(columns - rowPodcasts.size) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }

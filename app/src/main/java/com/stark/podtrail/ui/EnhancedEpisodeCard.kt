@@ -24,8 +24,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
-import com.stark.podtrail.data.EpisodeListItem
 import com.stark.podtrail.data.Podcast
+import com.stark.podtrail.data.EpisodeListItem
+import com.stark.podtrail.data.Episode
+import androidx.compose.material.icons.filled.Podcasts
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -358,7 +360,7 @@ fun EpisodeEmptyState(
         contentAlignment = Alignment.Center
     ) {
         EmptyState(
-            icon = Icons.Default.Podcast,
+            icon = Icons.Default.Podcasts,
             title = "No episodes found",
             message = "Try adjusting your filters or check back later for new episodes.",
             action = null

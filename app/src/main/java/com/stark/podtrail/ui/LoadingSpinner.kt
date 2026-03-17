@@ -35,7 +35,7 @@ fun LoadingSpinner(
             .graphicsLayer { rotationZ = rotation },
         color = color,
         strokeCap = StrokeCap.Round,
-        strokeWidth = with(LocalDensity.current) { (size * 0.08f).toPx() }
+        strokeWidth = size * 0.08f
     )
 }
 

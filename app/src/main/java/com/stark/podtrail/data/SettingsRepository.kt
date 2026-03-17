@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import androidx.room.withTransaction
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-import com.stark.podtrail.network.OpmlManager
+import com.stark.podtrail.data.OpmlManager
 import androidx.datastore.preferences.preferencesDataStore
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")

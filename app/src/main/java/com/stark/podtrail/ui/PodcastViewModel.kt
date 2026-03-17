@@ -20,6 +20,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
+import androidx.paging.cachedIn
 
 data class Badge(
     val name: String,
@@ -31,7 +32,7 @@ data class Badge(
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class PodcastViewModel @Inject constructor(
-    private val repo: PodcastRepository,
+    val repo: PodcastRepository,
     private val settingsRepo: SettingsRepository
 ) : ViewModel() {
 

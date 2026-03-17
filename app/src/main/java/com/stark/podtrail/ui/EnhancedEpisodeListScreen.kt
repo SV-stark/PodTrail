@@ -19,6 +19,9 @@ import com.stark.podtrail.data.EpisodeListItem
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import com.stark.podtrail.ui.BatchActionBar
+import com.stark.podtrail.ui.EpisodeSortMenu
+import com.stark.podtrail.ui.EnhancedEpisodeCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +33,9 @@ fun EnhancedEpisodeListScreen(
     onDetails: (EpisodeListItem) -> Unit
 ) {
     val pagingItems = vm.episodesForPaging(podcastId).collectAsLazyPagingItems()
+    
+    // Explicitly specify types to help compiler
+    val items: androidx.paging.compose.LazyPagingItems<EpisodeListItem> = pagingItems
     val sortOption by vm.sortOption.collectAsState()
     
     // Selection state
@@ -132,11 +138,11 @@ fun EnhancedEpisodeListScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(
-                            count = pagingItems.itemCount,
-                            key = pagingItems.itemKey { it.id },
-                            contentType = pagingItems.itemContentType { "episode" }
+                            count = items.itemCount,
+                            key = items.itemKey { it.id },
+                            contentType = items.itemContentType { "episode" }
                         ) { index ->
-                            val episode = pagingItems[index]
+                            val episode = items[index]
                             if (episode != null) {
                                 EnhancedEpisodeCard(
                                     episode = episode,

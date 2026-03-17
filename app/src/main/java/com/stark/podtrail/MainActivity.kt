@@ -26,6 +26,9 @@ import com.stark.podtrail.ui.ProfileScreen
 import com.stark.podtrail.ui.CalendarScreen
 import com.stark.podtrail.ui.SettingsScreen
 import com.stark.podtrail.ui.PodcastInfoScreen
+import com.stark.podtrail.ui.DiscoverScreen
+import com.stark.podtrail.ui.EpisodeDetailScreen
+import com.stark.podtrail.ui.SearchScreen
 import com.stark.podtrail.ui.SidebarDrawer
 import com.stark.podtrail.data.ThemeMode
 import com.stark.podtrail.data.EpisodeListItem
