@@ -1,12 +1,12 @@
 # Room
--keepclassmembers class * extends androidx.room.RoomDatabase {
+-keepclassmembers class * extends androidx.room3.RoomDatabase {
     <init>(...);
 }
--keep class * extends androidx.room.migration.Migration {
+-keep class * extends androidx.room3.migration.Migration {
     <init>(...);
 }
--keep @androidx.room.Entity class *
--keep class * { @androidx.room.PrimaryKey *; }
+-keep @androidx.room3.Entity class *
+-keep class * { @androidx.room3.PrimaryKey *; }
 
 # Gson
 -keepattributes Signature

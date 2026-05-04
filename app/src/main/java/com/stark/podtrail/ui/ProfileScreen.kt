@@ -36,7 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.stark.podtrail.data.AppSettings
 import com.stark.podtrail.data.PodcastWithStats
 import com.stark.podtrail.data.SettingsRepository

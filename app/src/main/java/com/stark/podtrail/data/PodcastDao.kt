@@ -1,9 +1,12 @@
 package com.stark.podtrail.data
 
-import androidx.room.*
+import androidx.room3.*
+import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
+import androidx.paging.PagingSource
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
 abstract class PodcastDao {
     @Transaction
     @Query("""
@@ -43,37 +46,37 @@ abstract class PodcastDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertEpisode(episode: Episode): Long
 
-    @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    @androidx.room3.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
     abstract fun getEpisodesForPodcast(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
     abstract fun getEpisodesForPodcastLite(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    @androidx.room3.Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
     abstract fun getEpisodesForPodcastAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<Episode>>
     
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
     abstract fun getEpisodesForPodcastLiteAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
     abstract fun getEpisodesForPodcastLiteDurationAsc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
     abstract fun getEpisodesForPodcastLiteDurationDesc(podcastId: Long): kotlinx.coroutines.flow.Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
-    abstract fun getEpisodesForPodcastLitePaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate DESC")
+    abstract fun getEpisodesForPodcastLitePaging(podcastId: Long): PagingSource<Int, EpisodeListItem>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
-    abstract fun getEpisodesForPodcastLiteAscPaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY pubDate ASC")
+    abstract fun getEpisodesForPodcastLiteAscPaging(podcastId: Long): PagingSource<Int, EpisodeListItem>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
-    abstract fun getEpisodesForPodcastLiteDurationAscPaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis ASC")
+    abstract fun getEpisodesForPodcastLiteDurationAscPaging(podcastId: Long): PagingSource<Int, EpisodeListItem>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
-    abstract fun getEpisodesForPodcastLiteDurationDescPaging(podcastId: Long): androidx.paging.PagingSource<Int, EpisodeListItem>
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes WHERE podcastId = :podcastId ORDER BY durationMillis DESC")
+    abstract fun getEpisodesForPodcastLiteDurationDescPaging(podcastId: Long): PagingSource<Int, EpisodeListItem>
 
-    @androidx.room.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
+    @androidx.room3.Query("SELECT * FROM episodes WHERE listened = 1 ORDER BY listenedAt DESC")
     abstract fun getHistory(): kotlinx.coroutines.flow.Flow<List<Episode>>
 
     @Query("SELECT * FROM episodes WHERE id = :episodeId LIMIT 1")
@@ -109,7 +112,7 @@ abstract class PodcastDao {
     @Query("SELECT SUM(durationMillis) FROM episodes WHERE listened = 1")
     abstract fun getTotalDurationListened(): Flow<Long?>
 
-    @androidx.room.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes ORDER BY pubDate DESC")
+    @androidx.room3.Query("SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp FROM episodes ORDER BY pubDate DESC")
     abstract fun getAllEpisodesLite(): Flow<List<EpisodeListItem>>
 
     @Query("SELECT lastPlayedTimestamp FROM episodes WHERE lastPlayedTimestamp > 0 ORDER BY lastPlayedTimestamp DESC")
@@ -202,7 +205,7 @@ abstract class PodcastDao {
     abstract fun getAllPlaylistCollections(): Flow<List<PlaylistCollection>>
 
     @Query("""
-        SELECT p.*, e.* FROM playlists p 
+        SELECT e.* FROM playlists p 
         INNER JOIN episodes e ON p.episodeId = e.id 
         WHERE p.name = :collectionName 
         ORDER BY p.position ASC
@@ -252,7 +255,7 @@ abstract class PodcastDao {
     """)
     abstract suspend fun getRecommendationsByGenre(genre: String): List<Podcast>
 
-    @androidx.room.Query("""
+    @androidx.room3.Query("""
         SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp 
         FROM episodes 
         WHERE pubDate >= :startTime AND pubDate < :endTime
@@ -260,7 +263,7 @@ abstract class PodcastDao {
     """)
     abstract fun getEpisodesForMonth(startTime: Long, endTime: Long): Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("""
+    @androidx.room3.Query("""
         SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp 
         FROM episodes 
         WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'
@@ -268,7 +271,7 @@ abstract class PodcastDao {
     """)
     abstract fun searchEpisodes(query: String): Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("""
+    @androidx.room3.Query("""
         SELECT id, podcastId, title, pubDate, imageUrl, episodeNumber, durationMillis, listened, listenedAt, playbackPosition, lastPlayedTimestamp 
         FROM episodes 
         WHERE podcastId = :podcastId AND (title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%')
@@ -276,7 +279,7 @@ abstract class PodcastDao {
     """)
     abstract fun searchEpisodesInPodcast(podcastId: Long, query: String): Flow<List<EpisodeListItem>>
 
-    @androidx.room.Query("SELECT * FROM podcasts WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
+    @androidx.room3.Query("SELECT * FROM podcasts WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
     abstract fun searchPodcasts(query: String): Flow<List<Podcast>>
 }
 

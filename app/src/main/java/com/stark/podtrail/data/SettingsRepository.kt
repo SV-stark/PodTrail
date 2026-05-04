@@ -8,7 +8,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import androidx.room.withTransaction
+import androidx.room3.*
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import com.stark.podtrail.data.OpmlManager
@@ -95,44 +95,46 @@ class SettingsRepository @Inject constructor(
                 try {
                     val backupData = gson.fromJson(jsonString, MinimalBackupData::class.java)
                     if (backupData.podcasts != null) { // Simple check
-                        database.withTransaction {
-                            dao.deleteAllEpisodes()
-                            dao.deleteAllPodcasts()
-                            
-                            // 1. Insert Podcasts
-                            val urlToIdMap = mutableMapOf<String, Long>()
-                            backupData.podcasts.forEach { mp ->
-                                val p = Podcast(
-                                    title = mp.title,
-                                    feedUrl = mp.feedUrl,
-                                    isFavorite = mp.isFavorite,
-                                    imageUrl = null,
-                                    description = null,
-                                    primaryGenre = null
-                                )
-                                val id = dao.insertPodcast(p)
-                                urlToIdMap[mp.feedUrl] = id
-                            }
-                            
-                            // 2. Insert Episodes (Stubs)
-                            val episodeStubs = backupData.episodes?.mapNotNull { me ->
-                                val pid = urlToIdMap[me.feedUrl]
-                                if (pid != null) {
-                                    Episode(
-                                        podcastId = pid,
-                                        guid = me.guid,
-                                        title = "Restoring...",
-                                        listened = me.listened,
-                                        playbackPosition = me.playbackPosition,
-                                        lastPlayedTimestamp = me.lastPlayedTimestamp,
-                                        pubDate = 0,
-                                        audioUrl = null,
+                        database.useWriterConnection { transactor ->
+                            transactor.immediateTransaction {
+                                dao.deleteAllEpisodes()
+                                dao.deleteAllPodcasts()
+                                
+                                // 1. Insert Podcasts
+                                val urlToIdMap = mutableMapOf<String, Long>()
+                                backupData.podcasts.forEach { mp ->
+                                    val p = Podcast(
+                                        title = mp.title,
+                                        feedUrl = mp.feedUrl,
+                                        isFavorite = mp.isFavorite,
                                         imageUrl = null,
-                                        description = null
+                                        description = null,
+                                        primaryGenre = null
                                     )
-                                } else null
+                                    val id = dao.insertPodcast(p)
+                                    urlToIdMap[mp.feedUrl] = id
+                                }
+                                
+                                // 2. Insert Episodes (Stubs)
+                                val episodeStubs = backupData.episodes?.mapNotNull { me ->
+                                    val pid = urlToIdMap[me.feedUrl]
+                                    if (pid != null) {
+                                        Episode(
+                                            podcastId = pid,
+                                            guid = me.guid,
+                                            title = "Restoring...",
+                                            listened = me.listened,
+                                            playbackPosition = me.playbackPosition,
+                                            lastPlayedTimestamp = me.lastPlayedTimestamp,
+                                            pubDate = 0,
+                                            audioUrl = null,
+                                            imageUrl = null,
+                                            description = null
+                                        )
+                                    } else null
+                                }
+                                dao.insertAllEpisodes(episodeStubs ?: emptyList())
                             }
-                            dao.insertAllEpisodes(episodeStubs ?: emptyList())
                         }
                         return@withContext true
                     }
@@ -141,11 +143,13 @@ class SettingsRepository @Inject constructor(
                 }
 
                 val legacyBackup = gson.fromJson(jsonString, BackupData::class.java)
-                database.withTransaction {
-                    dao.deleteAllEpisodes()
-                    dao.deleteAllPodcasts()
-                    dao.insertPodcasts(legacyBackup.podcasts)
-                    dao.insertAllEpisodes(legacyBackup.episodes)
+                database.useWriterConnection { transactor ->
+                    transactor.immediateTransaction {
+                        dao.deleteAllEpisodes()
+                        dao.deleteAllPodcasts()
+                        dao.insertPodcasts(legacyBackup.podcasts)
+                        dao.insertAllEpisodes(legacyBackup.episodes)
+                    }
                 }
                 true
             } catch (e: Exception) {

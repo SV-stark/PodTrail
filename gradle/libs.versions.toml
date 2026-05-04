@@ -1,22 +1,23 @@
 [versions]
 hilt = "2.59.2"
 hilt-navigation = "1.3.0"
-navigation = "2.8.4"
-paging = "3.3.4"
-room = "2.7.0"
-lifecycle = "2.8.7"
-compose = "1.7.5"
-activity-compose = "1.9.3"
-core-ktx = "1.15.0"
-okhttp = "4.12.0"
+navigation = "2.9.8"
+paging = "3.5.0-rc01"
+room = "3.0.0-alpha03"
+sqlite = "2.7.0-alpha03"
+lifecycle = "2.10.0"
+compose = "1.11.0"
+activity-compose = "1.13.0"
+core-ktx = "1.18.0"
+okhttp = "5.3.2"
 gson = "2.11.0"
-coil = "2.7.0"
+coil = "3.4.0"
 work = "2.10.0"
 junit = "4.13.2"
-ext-junit = "1.2.1"
-espresso = "3.6.1"
-material3 = "1.3.1"
-datastore = "1.1.2"
+ext-junit = "1.3.0"
+espresso = "3.7.0"
+material3 = "1.4.0"
+datastore = "1.2.1"
 
 [libraries]
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
@@ -30,17 +31,19 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
-androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+androidx-sqlite = { group = "androidx.sqlite", name = "sqlite", version.ref = "sqlite" }
+androidx-room-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room" }
+androidx-room-common = { group = "androidx.room3", name = "room3-common", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room" }
+androidx-room-paging = { group = "androidx.room3", name = "room3-paging", version.ref = "room" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "ext-junit" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
@@ -55,8 +58,9 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 
 [plugins]
-android-application = { id = "com.android.application", version = "9.0.0" }
+android-application = { id = "com.android.application", version = "9.2.0" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.3.20" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version = "2.3.20" }
-ksp = { id = "com.google.devtools.ksp", version = "2.3.5" }
+ksp = { id = "com.google.devtools.ksp", version = "2.3.7" }
 hilt = { id = "com.google.dagger.hilt.android", version = "2.59.2" }
+room3 = { id = "androidx.room3", version.ref = "room" }

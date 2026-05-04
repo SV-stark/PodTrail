@@ -1,6 +1,6 @@
 package com.stark.podtrail.data
 
-import androidx.room.*
+import androidx.room3.*
 
 @Entity(
     tableName = "playlists",

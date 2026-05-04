@@ -19,7 +19,7 @@ import java.util.*
 import com.stark.podtrail.data.EpisodeListItem
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -199,7 +199,7 @@ fun EpisodesListItemSmall(ep: EpisodeListItem, onClick: () -> Unit) {
         headlineContent = { Text(ep.title, maxLines = 1) },
         supportingContent = { Text(formatTime(ep.pubDate)) },
         leadingContent = {
-             coil.compose.AsyncImage(
+             coil3.compose.AsyncImage(
                 model = ep.imageUrl,
                 contentDescription = null,
                 modifier = Modifier.size(ResponsiveDimensions.iconSizeLarge())

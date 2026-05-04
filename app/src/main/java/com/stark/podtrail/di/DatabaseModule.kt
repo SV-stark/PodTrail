@@ -1,7 +1,7 @@
 package com.stark.podtrail.di
 
 import android.content.Context
-import androidx.room.Room
+import androidx.room3.Room
 import com.stark.podtrail.data.PodcastDao
 import com.stark.podtrail.data.PodcastDatabase
 import com.stark.podtrail.data.MIGRATION_5_6
